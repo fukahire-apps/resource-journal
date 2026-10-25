@@ -17,7 +17,7 @@ const AppRelease=(()=>{
  const history=[{version:'1.0.0',date:'2026-10-25',changes:['初回公開']}];
  function init(){
   const current=history[0],b=document.getElementById('app-version'),open=()=>AppPanels.open('更新履歴',body=>{for(const entry of history){const section=el('section',undefined,'release-entry'),h=el('h3','v'+entry.version),date=el('time',entry.date);date.dateTime=entry.date;const list=el('ul');for(const change of entry.changes)list.append(el('li',change));section.append(h,date,list);body.append(section);}});
-  b.textContent='v'+current.version;b.onclick=open;
+  b.textContent='Ver.'+current.version;b.onclick=open;
   const historyButton=button('更新履歴',open);historyButton.id='release-history-button';const controls=el('div',undefined,'release-controls');b.before(controls);controls.append(b,historyButton);
   const key=KEY+'-release-seen';let seen;try{seen=localStorage.getItem(key);}catch(_){return;}
   if(current.version==='1.0.0'||seen===current.version)return;
