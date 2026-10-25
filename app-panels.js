@@ -14,7 +14,7 @@ const AppPanels=(()=>{
 })();
 // このリリースから番号を付与。確認できない過去のバージョンは掲載しない。
 const AppRelease=(()=>{
- const history=[{version:'1.0.0',date:'2026-10-25',changes:['初回公開']}];
+ const history=[{version:'1.0.1',date:'2026-10-26',changes:['睡眠リサーチ履歴の削除機能を追加']},{version:'1.0.0',date:'2026-10-25',changes:['初回公開']}];
  function init(){
   const current=history[0],b=document.getElementById('app-version'),open=()=>AppPanels.open('更新履歴',body=>{for(const entry of history){const section=el('section',undefined,'release-entry'),h=el('h3','v'+entry.version),date=el('time',entry.date);date.dateTime=entry.date;const list=el('ul');for(const change of entry.changes)list.append(el('li',change));section.append(h,date,list);body.append(section);}});
   b.textContent='Ver.'+current.version;b.onclick=open;
