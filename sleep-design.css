@@ -6,7 +6,7 @@ body .tabs,body:has(#record[hidden]) .tabs{grid-template-columns:repeat(var(--ma
 .sleep-fields{display:grid;align-items:end;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.sleep-fields label{min-width:0;font-size:13px;color:#6f7377}.sleep-fields input,.sleep-fields select{margin-top:5px}
 .sleep-search{display:block;margin:20px 0 12px}.sleep-search input{margin-top:6px}.sleep-candidates{display:grid;grid-template-columns:minmax(0,1fr);gap:0;max-height:260px;overflow:auto;margin-bottom:12px}
 .sleep-candidate{display:grid;grid-template-columns:minmax(0,1fr) 188px;align-items:center;gap:8px;border-bottom:1px solid var(--mh-border);padding:6px 0}.sleep-candidate>strong{font-size:14px;font-weight:500;overflow-wrap:anywhere;min-width:0}.sleep-candidate-stars{display:grid;grid-template-columns:repeat(4,44px);gap:4px}:is(#sleep,#sleep-editor) .sleep-candidate-stars button{padding:0;font-size:14px;min-width:44px;text-align:center}:is(#sleep,#sleep-editor) .sleep-candidate-stars button:disabled{opacity:.35;cursor:not-allowed}
-.sleep-entry{display:grid;grid-template-columns:minmax(0,1fr) 44px 60px 44px;align-items:center;gap:6px;min-height:44px;border-top:1px solid var(--mh-border);padding:0}.sleep-entry>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}.sleep-entry-amount{display:flex;align-items:center;min-width:0;min-height:47px;margin:0}body :is(#sleep,#sleep-editor) .sleep-entry .sleep-entry-amount input{min-height:36px;height:36px;margin:0;text-align:right;font-weight:600;padding:4px 6px;font-size:16px}:is(#sleep,#sleep-editor) .sleep-entry>button{padding:0;font-size:14px;background:none;border:0;border-radius:var(--mh-radius)}:is(#sleep,#sleep-editor) .sleep-entry-remove{color:var(--mh-error);font-size:20px}
+.sleep-entry{display:grid;grid-template-columns:minmax(0,1fr) 44px 60px 44px;align-items:center;gap:6px;min-height:44px;border-top:1px solid var(--mh-border);padding:0}.sleep-entry>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}.sleep-entry-amount{display:flex;align-items:center;min-width:0;min-height:47px;margin:0}body :is(#sleep,#sleep-editor,.sleep-ocr-panel) .sleep-entry .sleep-entry-amount input{min-height:36px;height:36px;margin:0;text-align:right;font-weight:600;padding:4px 6px;font-size:16px}:is(#sleep,#sleep-editor,.sleep-ocr-panel) .sleep-entry>button{padding:0;font-size:14px;background:none;border:0;border-radius:var(--mh-radius)}:is(#sleep,#sleep-editor,.sleep-ocr-panel) .sleep-entry-remove{color:var(--mh-error);font-size:20px}
 .sleep-total{border-top:1px solid #eceef0;padding:16px 0}.sleep-total strong{font-size:26px}.sleep-actions{margin:12px 0 24px}.sleep-actions button{flex:1}.sleep-sessions{border-bottom:1px solid #eceef0;margin-bottom:16px}.sleep-session{padding:12px 0;border-top:1px solid #eceef0}.sleep-session p{font-size:14px;color:#777}.sleep-note{font-size:13px;color:#777;line-height:1.6}.sleep-session-head h3{margin:0;font-size:16px}
 :is(#sleep,#sleep-editor) .sleep-save{background:#f2f3f4;color:#202124;border:1px solid #e8eaed;border-radius:6px;padding:8px 16px}:is(#sleep,#sleep-editor) .sleep-error{color:#a04444}.history-sleep-amounts{font-size:13px;color:#777}.sleep-proportions{color:#777;font-weight:400;font-size:12px}
 @media(max-width:400px){.tabs button{font-size:11px!important}}
@@ -102,14 +102,14 @@ body:has(#sleep:not([hidden])) :is(#record,#history){margin-bottom:0}
 #sleep #sleep-root>.period-picker{background:var(--mh-surface);margin-bottom:8px}
 #sleep #sleep-root>.period-picker>.sleep-switch{margin:0!important}
 #sleep .sleep-research-heading{margin:4px 0 0}
-/* 件数で高さを変えない。候補の★位置を保ち、短い画面の候補操作域も確保する。 */
-#sleep #sleep-entries{height:clamp(96px,26vh,220px);height:clamp(96px,26dvh,220px);max-height:50vh;max-height:50dvh;overflow-anchor:none}
-#sleep .sleep-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;margin:12px 0 6px;padding-top:12px;border-top:1px solid var(--mh-border)}
+/* 選択数に応じた高さとし、多い場合だけ一覧内をスクロールする。 */
+#sleep #sleep-entries{height:auto;max-height:50vh;max-height:50dvh;overflow-anchor:none}
+#sleep .sleep-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;margin:12px 0 6px;padding-top:12px;border-top:1px solid var(--mh-border)}
 #sleep .sleep-search-row .sleep-search{min-width:0;margin:0;padding:0;border:0}
 body #sleep .sleep-search-row input{margin:0;font-size:16px;min-height:44px;padding-inline:8px}
 #sleep .sleep-search-row .sleep-filter-info{margin:0;gap:4px;flex-wrap:nowrap}
-#sleep .sleep-search-row .sleep-filter-info button{min-height:44px;white-space:nowrap;font-size:12px!important;padding-inline:6px!important}
-@media(max-width:360px){#sleep .sleep-search-row input{padding-inline:5px}#sleep .sleep-search-row .sleep-filter-info button{padding-inline:4px!important}}
+#sleep .sleep-search-row :is(.sleep-filter-info button,.sleep-screenshot){min-height:44px;white-space:nowrap;font-size:12px!important;padding-inline:6px!important}
+@media(max-width:360px){#sleep .sleep-search-row input{padding-inline:5px}#sleep .sleep-search-row :is(.sleep-filter-info button,.sleep-screenshot){padding-inline:4px!important}}
 #sleep #sleep-form .sleep-search>input{margin:0;height:44px}
 
 /* 検索文字の消去は同じ入力枠内。標準の検索消去と二重に表示しない。 */
@@ -146,16 +146,16 @@ body:has(#sleep.sleep-keyboard-open:not([hidden])) .tabs{visibility:hidden;point
 #sleep .sleep-research-heading .sleep-fields select{margin:0!important}
 
 /* 図鑑番号と姿の補助表記。検索・保存の名称は変更しない。 */
-#sleep .sleep-pokemon-name{min-width:0;overflow-wrap:anywhere;font-weight:400;line-height:1.35}
-#sleep .sleep-pokemon-name .sleep-dex{display:inline;font-size:10px;color:var(--mh-muted);margin-right:4px;font-variant-numeric:tabular-nums}
-#sleep .sleep-pokemon-name .sleep-form-name{display:inline;font-size:11px;color:var(--mh-muted);font-weight:400}
-#sleep :is(.sleep-entry,.sleep-candidate-stars) .sleep-star-button{min-height:44px;height:44px;min-width:40px;padding:6px 4px;border:1px solid var(--mh-border);background:#f5f6f6;border-radius:var(--mh-radius);font-size:14px;font-weight:500;line-height:1.4}
-#sleep .sleep-entry .sleep-star-button[aria-pressed=true]{border-color:var(--mh-accent);background:var(--mh-selected);color:var(--mh-text)}
+:is(#sleep,.sleep-ocr-panel) .sleep-pokemon-name{min-width:0;overflow-wrap:anywhere;font-weight:400;line-height:1.35}
+:is(#sleep,.sleep-ocr-panel) .sleep-pokemon-name .sleep-dex{display:inline;font-size:10px;color:var(--mh-muted);margin-right:4px;font-variant-numeric:tabular-nums}
+:is(#sleep,.sleep-ocr-panel) .sleep-pokemon-name .sleep-form-name{display:inline;font-size:11px;color:var(--mh-muted);font-weight:400}
+:is(#sleep,.sleep-ocr-panel) :is(.sleep-entry,.sleep-candidate-stars) .sleep-star-button{min-height:44px;height:44px;min-width:40px;padding:6px 4px;border:1px solid var(--mh-border);background:#f5f6f6;border-radius:var(--mh-radius);font-size:14px;font-weight:500;line-height:1.4}
+:is(#sleep,.sleep-ocr-panel) .sleep-entry .sleep-star-button[aria-pressed=true]{border-color:var(--mh-accent);background:var(--mh-selected);color:var(--mh-text)}
 #sleep .sleep-candidate-stars{flex-wrap:wrap}
 
 /* 選択済み行は入力枠と同寸法。操作領域は行の高さを維持する。 */
-#sleep .sleep-entry{grid-template-columns:minmax(0,1fr) 52px 52px 44px}
-#sleep .sleep-entry .sleep-star-button{width:52px;min-width:52px;height:36px;min-height:36px;padding:4px 6px}
+:is(#sleep,.sleep-ocr-panel) .sleep-entry{grid-template-columns:minmax(0,1fr) 52px 52px 44px}
+:is(#sleep,.sleep-ocr-panel) .sleep-entry .sleep-star-button{width:52px;min-width:52px;height:36px;min-height:36px;padding:4px 6px}
 #sleep .sleep-sticky-total :is(#sleep-candy-total,.sleep-entry-count){font-size:20px;color:var(--mh-text);font-weight:400;line-height:1.3}
 #sleep .sleep-sticky-total [data-saved=true]{font-weight:700}
 #sleep .sleep-sticky-total .quantity-number{font-size:inherit;font-weight:inherit}
@@ -168,3 +168,24 @@ body:has(#sleep.sleep-keyboard-open:not([hidden])) .tabs{visibility:hidden;point
 
 /* 保存状態・寸法・背景はそのまま、見える枠線だけをなくす。 */
 :is(#sleep,#sleep-editor) .sleep-save:not(:disabled){border-color:transparent}
+
+#sleep .sleep-entry-name{min-width:0;text-align:left;overflow-wrap:anywhere}#sleep .sleep-entry-name>strong{font-weight:400}
+
+/* Confirmed research is read-only until its own Edit action is chosen. */
+#sleep .sleep-readonly .sleep-search-row,#sleep .sleep-readonly .sleep-candidates{display:none}
+#sleep .sleep-readonly .sleep-entry button:disabled,#sleep .sleep-readonly .sleep-fields select:disabled,#sleep .sleep-readonly .sleep-entry input:disabled{opacity:1;color:var(--mh-text)}
+#sleep .sleep-sticky-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+#sleep .sleep-sticky-total{flex:0 0 auto;min-width:86px;font-variant-numeric:tabular-nums}
+#sleep .sleep-sticky-total #sleep-candy-total{min-width:3.8ch}
+#sleep .sleep-sticky-total #sleep-entry-count{min-width:3ch}
+#sleep .sleep-sticky-actions .sleep-rounds{flex:1 0 auto}
+#sleep .sleep-sticky-actions .sleep-rounds button{padding-inline:6px;min-width:48px}
+#sleep #sleep-save,#sleep #sleep-cancel{flex:0 0 auto;min-height:44px;padding:6px 8px;font-size:13px;margin:0}
+
+#sleep-entries .sleep-entry-selected{outline:2px solid var(--mh-accent);outline-offset:-2px;border-radius:8px}
+#sleep-entries .sleep-entry-review{box-shadow:inset 3px 0 #b07b2d;border-radius:8px}
+#sleep #sleep-entries .sleep-entry-sortable{grid-template-columns:42px minmax(0,1fr) 52px 52px 44px;gap:4px}
+#sleep #sleep-entries .sleep-entry-drag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:42px;min-height:44px;color:var(--mh-muted);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#sleep #sleep-entries .sleep-entry-drag>span{height:19px;font-size:20px;line-height:19px}
+#sleep #sleep-entries .sleep-entry-drag>small{font-size:10px;font-variant-numeric:tabular-nums;line-height:14px}
+#sleep #sleep-entries .sleep-entry-dragging{background:var(--mh-selected)}

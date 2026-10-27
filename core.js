@@ -18,12 +18,12 @@ const CandyCore = (() => {
  const inRange=(r,period)=>!period||(gameDay(r.datetime)>=period[0]&&gameDay(r.datetime)<period[1]);
  const mewAmounts=level=>level<=5?[1]:[1,level-4];
  // 保存用の種名は変更せず、旧サイズ名を表示時に読み替えます。
- const speciesName=name=>typeof name==='string'?name.replace(/((?:バケッチャ|パンプジン)\()(こだま|ちゅうだま|おおだま|ギガだま)(\))/g,'$1$2しゅ$3'):name;
+ const speciesName=name=>typeof name==='string'?name.replaceAll('（','(').replaceAll('）',')').replace(/((?:バケッチャ|パンプジン)\()(こだま|ちゅうだま|おおだま|ギガだま)(\))/g,'$1$2しゅ$3'):name;
  const shardType=species=>SK.species[species]?.shardMode||null;
  const shardAmounts=(type,level)=>{if(!Number.isInteger(level)||level<1||level>(type==='lucky'?7:8))return [];return type==='fixed'?[[240,340,480,670,920,1260,1800,2500][level-1]]:type==='lucky'?[0,[500,720,1030,1440,2000,2800,4000][level-1],[2500,3600,5150,7200,10000,14000,20000][level-1]]:[];};
  function weeklyTotals(records,day){const start=range('week',day)[0];const days=Array.from({length:7},(_,i)=>({date:addDays(start,i),amount:0}));for(const r of records){const d=gameDay(r.datetime),item=days.find(x=>x.date===d);if(item)item.amount+=r.amount;}return days;}
  const mewSkills=SK.mewEntries().map(s=>s.legacyName);
- const weekday=day=>dateOnly(day)?'（'+['日','月','火','水','木','金','土'][new Date(day).getUTCDay()]+'）':'';
+ const weekday=day=>dateOnly(day)?'('+['日','月','火','水','木','金','土'][new Date(day).getUTCDay()]+')':'';
  const displayDate=day=>dateOnly(day)?day.replaceAll('-','/')+weekday(day).replace('（','(').replace('）',')'):day;
  // ミュウの同一発動から、集計専用のかけら行を作ります。保存・履歴表示は元の1件だけです。
  const mewShardRecords=records=>records.filter(r=>r.method==='mew'&&SK.id(r.firedSkill)==='dream_shard_s').map(r=>{const p=r.context?.actor||r.context?.team?.[r.context?.actorSlot-1];return {id:r.id,datetime:r.datetime,method:'skill',amount:r.shardAmount,pokemonId:p?.id||r.context?.actorId||'unknown-mew',pokemon:p?.nickname||'ミュウ',species:'ミュウ',slot:r.context?.actorSlot??null,pokemonSnapshot:p,skillName:r.firedSkill,skillLevel:r.context?.effectiveLevel,source:'mew'};});
@@ -66,7 +66,7 @@ const CandyCore = (() => {
  // 行動別設定は既存のリソース別設定とANDで判定し、旧設定・記録は移行しない。
  function actionCategory(r){
   if(r.source==='nap_island'||r.otherKind==='nap_island')return 'nap';
-  if(['help','research'].includes(r.method))return r.method;
+  if(['help','research','social'].includes(r.method))return r.method;
   const p=r.context?.actor||r.pokemonSnapshot,species=p?.species||(['skill','lucky'].includes(r.method)?r.species:'');
   if(r.method==='mew'||r.source==='mew'||species==='ミュウ')return 'mew';
   if(r.method==='delibird'||species==='デリバード')return 'delibird';
@@ -94,9 +94,10 @@ const CandyCore = (() => {
    const saved=settings[group];if(saved!==undefined&&(!saved||Array.isArray(saved)||typeof saved!=='object'))throw Error('集計設定');
    result[group]={...saved};for(const key of keys){if(saved?.[key]!==undefined&&typeof saved[key]!=='boolean')throw Error('集計設定');result[group][key]=saved?.[key]??(group==='aggregateCandy'?settings[old[key]]!==false:true);}
   }
-  if(settings.candyFilters!==undefined){if(!settings.candyFilters||Array.isArray(settings.candyFilters)||typeof settings.candyFilters!=='object')throw Error('集計フィルター');for(const scope of ['types','week','month','breakdown']){const flags=settings.candyFilters[scope];if(flags===undefined)continue;if(!flags||Array.isArray(flags)||typeof flags!=='object'||Object.keys(old).some(key=>flags[key]!==undefined&&typeof flags[key]!=='boolean'))throw Error('集計フィルター');}}
+  if(settings.aggregateCandy?.social!==undefined&&typeof settings.aggregateCandy.social!=='boolean')throw Error('ソーシャルリサーチの集計設定');
+  if(settings.candyFilters!==undefined){if(!settings.candyFilters||Array.isArray(settings.candyFilters)||typeof settings.candyFilters!=='object')throw Error('集計フィルター');for(const scope of ['types','week','month','breakdown']){const flags=settings.candyFilters[scope];if(flags===undefined)continue;if(!flags||Array.isArray(flags)||typeof flags!=='object'||[...Object.keys(old),'social'].some(key=>flags[key]!==undefined&&typeof flags[key]!=='boolean'))throw Error('集計フィルター');}}
   if(settings.shardFilters!==undefined){if(!settings.shardFilters||Array.isArray(settings.shardFilters)||typeof settings.shardFilters!=='object')throw Error('集計フィルター');for(const scope of ['week','month']){const flags=settings.shardFilters[scope];if(flags!==undefined&&(!flags||Array.isArray(flags)||typeof flags!=='object'||['research','skill','cluster','other'].some(key=>flags[key]!==undefined&&typeof flags[key]!=='boolean')))throw Error('集計フィルター');}}
-  for(const group of ['displayActions','aggregateActions'])if(settings[group]!==undefined&&(!settings[group]||Array.isArray(settings[group])||typeof settings[group]!=='object'||Object.values(settings[group]).some(v=>typeof v!=='boolean')))throw Error('行動別設定');
+  for(const group of ['displayActions','aggregateActions','aggregateCandyActions','aggregateShardActions'])if(settings[group]!==undefined&&(!settings[group]||Array.isArray(settings[group])||typeof settings[group]!=='object'||Object.values(settings[group]).some(v=>typeof v!=='boolean')))throw Error('行動別設定');
   return result;
  }
  function migrate(raw,map){
@@ -104,8 +105,13 @@ const CandyCore = (() => {
   const shardRecords=raw.shardRecords??[];validateShards(shardRecords);if(raw.fieldHistory!==undefined)(typeof FieldHistory!=='undefined'?FieldHistory:require('./field-history.js')).validate(raw.fieldHistory);
   if(raw.settings?.sleepPickupEvents!==undefined)(typeof SleepPickups!=='undefined'?SleepPickups:require('./sleep-pickups.js')).validate(raw.settings.sleepPickupEvents,map);
   if(raw.sleepSessions!==undefined||raw.sleepDrafts!==undefined||raw.settings?.sleepCandyMultipliers!==undefined){const sleep=typeof SleepResearch!=='undefined'?SleepResearch:require('./sleep-research.js');sleep.validateMultipliers(raw);sleep.validate(raw.sleepSessions||[],map,shardRecords);sleep.validateDrafts(raw.sleepDrafts,map);}
+  if(raw.socialResearch!==undefined)(typeof SocialResearch!=='undefined'?SocialResearch:require('./social-research.js')).validate(raw.socialResearch,map);
   const ids=new Set();
-  for(const p of raw.pokemon){if(!p||(p.shardSkill!==undefined&&typeof p.shardSkill!=='boolean')||(p.mainSkill!==undefined&&(typeof p.mainSkill!=='string'||!p.mainSkill.trim()))||(p.mainSkillId!==undefined&&(typeof p.mainSkillId!=='string'||!p.mainSkillId.trim()))||typeof p.id!=='string'||ids.has(p.id)||!Object.hasOwn(map,p.species)||typeof p.nickname!=='string'||(p.profile!=null&&!profileValid(p.profile,p.species,true)))throw Error('個体情報');ids.add(p.id);}
+  for(const p of raw.pokemon){if(!p||(p.shardSkill!==undefined&&typeof p.shardSkill!=='boolean')||(p.mainSkill!==undefined&&(typeof p.mainSkill!=='string'||!p.mainSkill.trim()))||(p.mainSkillId!==undefined&&(typeof p.mainSkillId!=='string'||!p.mainSkillId.trim()))||typeof p.id!=='string'||ids.has(p.id)||(p.provisional!==undefined&&typeof p.provisional!=='boolean')||!(Object.hasOwn(map,p.species)||p.provisional===true&&p.species==='')||typeof p.nickname!=='string'||(p.profile!=null&&!profileValid(p.profile,p.species,true)))throw Error('個体情報');ids.add(p.id);}
+  if(raw.savedTeams!==undefined){
+   if(!Array.isArray(raw.savedTeams)||raw.savedTeams.length>8)throw Error('保存済みチーム');
+   for(const saved of raw.savedTeams){if(saved===null)continue;if(!saved||typeof saved.name!=='string'||!(saved.team===null||Array.isArray(saved.team)&&saved.team.length===5))throw Error('保存済みチーム');if(saved.team){const members=saved.team.filter(id=>id!==null);if(members.some(id=>typeof id!=='string'||!ids.has(id))||new Set(members).size!==members.length)throw Error('保存済みチームの個体');}}
+  }
   const occupied=raw.team.filter(x=>x!==null);if(occupied.some(id=>!ids.has(id))||new Set(occupied).size!==occupied.length)throw Error('編成');
   const rids=new Set();for(const r of raw.records){
    if(!r||typeof r.id!=='string'||rids.has(r.id)||!['help','mew','delibird','skill'].includes(r.method)||typeof r.datetime!=='string'||!Number.isFinite(Date.parse(r.datetime)))throw Error('履歴');rids.add(r.id);
@@ -122,7 +128,7 @@ const CandyCore = (() => {
    if(unified&&r.amount===0&&r.shardAmount===0&&SK.id(SK.forPokemon(r.context.actor))!=='metronome'&&!(r.sourcePokemonId&&['skill_20','super_luck','metronome'].includes(r.sourceSkillId)))throw Error('0個の統合スキル記録');
    if(r.method==='skill'&&!isNapRecord(r)&&!r.context)throw Error('スキル記録時の編成');
    if(r.context!=null){const c=r.context;if(!Array.isArray(c.team)||c.team.length!==5)throw Error('記録時編成');
-    for(const p of c.team)if(p!==null&&(!p||typeof p.id!=='string'||typeof p.nickname!=='string'||!Object.hasOwn(map,p.species)||(p.profile!=null&&!profileValid(p.profile,p.species,true))))throw Error('記録時個体');
+    for(const p of c.team)if(p!==null&&(!p||typeof p.id!=='string'||typeof p.nickname!=='string'||!(Object.hasOwn(map,p.species)||p.provisional===true&&p.species==='')||(p.profile!=null&&!profileValid(p.profile,p.species,true))))throw Error('記録時個体');
     if(r.method==='skill'){if(!c.actor||c.actor.id!==c.actorId||!Number.isInteger(c.actorSlot)||c.actorSlot<1||c.actorSlot>5||c.team[c.actorSlot-1]?.id!==c.actorId)throw Error('スキル使用個体');}
     if(r.method!=='help'&&r.method!=='skill'){
      const actor=c.actor || c.team[c.actorSlot-1];
