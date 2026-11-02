@@ -10,7 +10,7 @@ const ShardRewardOCR=(()=>{
  async function read(file){const canvas=await SleepOCR.image(file),w=canvas.width,ocr=await SleepOCR.worker();const result={researchExp:null,baseAmount:null};try{
   for(const kind of ['researchExp','baseAmount']){const y=band(canvas,kind);if(y<0)continue;
    await ocr.setParameters({tessedit_pageseg_mode:'6',tessedit_char_whitelist:''});const label=(await ocr.recognize(SleepOCR.crop(canvas,.27*w,y-.035*w,.34*w,.085*w))).data.text.normalize('NFKC').replace(/\s/g,'');
-   if(kind==='researchExp'?!/リサーチEXP/i.test(label):!/ゆめの[かが]けら/.test(label))continue;
+   if(kind==='researchExp'?!/リサーチEXP/i.test(label):!/ゆめの(?:[かが]|かが)けら/.test(label))continue;
    await ocr.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789,'});const recognized=(await ocr.recognize(SleepOCR.crop(canvas,.65*w,y-.04*w,.30*w,.09*w))).data;
    result[kind]=amount(recognized.text,recognized.confidence);
   }
