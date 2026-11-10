@@ -1,14 +1,17 @@
 // 表示用の集計は履歴から都度作り、localStorageには保存しません。
 const SummaryExtras=(()=>{
- const candySources=[['research','睡眠'],['social','ソーシャル'],['help','アメ拾い'],['skills','スキル'],['other','その他']];
+ const candySources=[['research','睡眠'],['social','フレンド'],['help','アメ拾い'],['skills','スキル'],['other','その他']];
  const candySkillSources=[['mew','ミュウ'],['delibird','デリバード'],['copy','スキルコピー'],['metronome','ゆびをふる']];
- const candySourceColors={research:'#4f78a8',social:'#4f8666',help:'#ad625b',skills:'#97762e',other:'#a66883'};
+ const color=(token,fallback)=>{const value=typeof document!=='undefined'&&typeof getComputedStyle==='function'?getComputedStyle(document.documentElement).getPropertyValue(token):'';return typeof value==='string'&&value.trim()||fallback;};
+ const candySourceColors={research:color('--source-research','#4f78a8'),social:color('--source-social','#4f8666'),help:color('--source-help','#ad625b'),skills:color('--source-skills','#9C7A31'),other:color('--source-other','#82919B')};
  const candySource=r=>{const key=C.actionCategory(r);return ['mew','delibird','copy','metronome'].includes(key)?'skills':['research','social','help'].includes(key)?key:'other';};
  const candyChild=r=>{const key=C.actionCategory(r);return ['mew','delibird','copy','metronome'].includes(key)?key:null;};
  const shardSources=[['research','睡眠リサーチ'],['skill','スキル'],['cluster','ゆめのかたまり'],['other','その他']];
- const orderedSources=kind=>kind==='shard'?['skill','research','cluster','other'].map(key=>shardSources.find(([k])=>k===key)):candySources;
+ const shardSummarySources=[['research','睡眠'],['skill','メインスキル'],['other','その他']];
+ const orderedSources=kind=>kind==='shard'?shardSummarySources:candySources;
  const settingKeys={skill:'showShardSkill',research:'showShardResearch',cluster:'showShardCluster',other:'showShardOther'};
  const shardKey=method=>method==='lucky'?'skill':method;
+ const shardSummaryKey=method=>method==='cluster'?'other':shardKey(method);
  const shardSummaryOn=method=>typeof ShardUI==='undefined'||typeof ShardUI.recordSourceOn!=='function'||ShardUI.recordSourceOn(method);
  const otherVisible=(key,settings=state.settings)=>C.actionAllowed(settings,'other','displayActions')&&settings.displayActions?.[key]!==false&&(settings.displayActions?.[key]===true||settings[key==='cluster'?'showShardCluster':'showShardOther']!==false);
  const shardVisible=(method,settings=state.settings)=>method==='cluster'?otherVisible('cluster',settings):method==='other'?['mission','achievement','gift'].some(key=>otherVisible(key,settings)):settings[settingKeys[shardKey(method)]]!==false;
@@ -29,21 +32,22 @@ const SummaryExtras=(()=>{
  };
  const allowedRecord=(r,kind='candy')=>{const scoped={...state.settings,aggregateActions:state.settings[kind==='candy'?'aggregateCandyActions':'aggregateShardActions']||state.settings.aggregateActions},category=C.actionCategory(r),key=kind==='shard'&&state.settings.aggregateShardActions&&['mew','delibird'].includes(category)?'shards':category,legacy=(state.settings[kind==='candy'?'aggregateCandy':'aggregateShards']||C.aggregationSettings(state.settings)[kind==='candy'?'aggregateCandy':'aggregateShards'])[kind==='candy'?r.method:shardKey(r.method)]!==false;const child=r.method==='cluster'?'cluster':r.method==='other'?r.otherKind:null,childOn=key==='other'&&C.otherKeys.includes(child)&&scoped.aggregateActions?.[child]===true;return C.otherRecordAllowed(scoped,r)&&C.actionAllowed(scoped,key)&&(legacy||scoped.aggregateActions?.[key]===true||childOn);};
  const filterOn=(scope,key)=>{if(!scope)return true;const flags=state.settings.candyFilters?.[scope]||{};return flags[key]??flags[key==='copy'||key==='metronome'||key==='other'?'skill':key]??true;};
+ const skillDisplayName=scope=>{const on=candySkillSources.filter(([key])=>aggregateVisible('candy',key)&&filterOn(scope,key));return on.length===1?on[0][1]:'スキル';};
  const localVisible=(scope,record)=>{if(!scope)return true;const key=typeof record==='string'?record:candySource(record);return key==='skills'&&typeof record!=='string'?filterOn(scope,candyChild(record)):key==='skills'?candySkillSources.some(([child])=>filterOn(scope,child)):filterOn(scope,key);};
  const candySourceVisible=(method,scope)=>aggregateVisible('candy',method)&&localVisible(scope,method);
  const candyRecords=(records,scope)=>records.filter(r=>(r.activationVersion!==1||r.resourceFlags.candy)&&allowedRecord(r)&&localVisible(scope,r));
- const visibleCandySources=scope=>candySources.filter(([key])=>candySourceVisible(key,scope));
- const shardSourceVisible=(method,scope)=>aggregateVisible('shard',method)&&shardSummaryOn(method)&&(!scope||state.settings.shardFilters?.[scope]?.[shardKey(method)]!==false);
- const shardRecords=(records,scope)=>records.filter(r=>allowedRecord(r,'shard')&&shardSummaryOn(r.method)&&(!scope||state.settings.shardFilters?.[scope]?.[shardKey(r.method)]!==false));
- const visibleShardSources=scope=>shardSources.filter(([key])=>shardSourceVisible(key,scope));
+ const visibleCandySources=scope=>candySources.filter(([key])=>candySourceVisible(key,scope)).map(([key,name])=>[key,key==='skills'?skillDisplayName(scope):name]);
+ const shardSourceVisible=method=>(method==='other'?aggregateVisible('shard','other')||aggregateVisible('shard','cluster'):aggregateVisible('shard',method))&&shardSummaryOn(method);
+ const shardRecords=records=>records.filter(r=>allowedRecord(r,'shard')&&shardSummaryOn(r.method));
+ const visibleShardSources=()=>shardSummarySources.filter(([key])=>shardSourceVisible(key));
  function filterControls(root,scope,records,kind='candy'){
   root.replaceChildren();root.className='candy-source-switches';root.setAttribute('aria-label',((kind==='shard'?{week:'週間のゆめのかけら',month:'月間のゆめのかけら'}:{types:'種類別アメ',week:'週間のアメ',month:'月間のアメ',breakdown:'獲得数の内訳'})[scope])+'の集計対象');
-  const shard=kind==='shard',group=shard?'shardFilters':'candyFilters',filtered=shard?shardRecords(records,scope):candyRecords(records,scope),total=C.sum(filtered);
+  const shard=kind==='shard',group='candyFilters',filtered=shard?shardRecords(records):candyRecords(records,scope),total=C.sum(filtered);
   for(const [key,title] of orderedSources(kind)){
-   if(!aggregateVisible(kind,key)||shard&&!shardSummaryOn(key))continue;
-   const name=shard?({skill:'スキル',research:'睡眠',cluster:'かたまり',other:'その他'})[key]:title,toggle=el('button',name),item=el('div',undefined,'candy-source-choice'),on=shard?state.settings[group]?.[scope]?.[key]!==false:localVisible(scope,key),amount=C.sum(filtered.filter(r=>(shard?shardKey(r.method):candySource(r))===key));
-   toggle.type='button';toggle.dataset.source=key;item.dataset.source=key;toggle.style.setProperty?.('--source-color',shard?candySourceColors[key==='skill'?'skills':key==='cluster'?'other':key]:candySourceColors[key]);toggle.setAttribute('aria-pressed',String(on));toggle.setAttribute('aria-label',name);
-   toggle.onclick=()=>{const flags={...state.settings[group]?.[scope]};if(!shard&&key==='skills')for(const [child] of candySkillSources)flags[child]=!on;else flags[key]=!on;commit({...state,settings:{...state.settings,[group]:{...state.settings[group],[scope]:flags}}},null);};
+   if(shard?!(key==='other'?aggregateVisible('shard','other')||aggregateVisible('shard','cluster'):aggregateVisible('shard',key)):!aggregateVisible(kind,key))continue;
+   const name=!shard&&key==='skills'?skillDisplayName(scope):title,toggle=el('button',name),item=el('div',undefined,'candy-source-choice'),on=shard?shardSummaryOn(key):localVisible(scope,key),amount=C.sum(filtered.filter(r=>(shard?shardSummaryKey(r.method):candySource(r))===key));
+   toggle.type='button';toggle.dataset.source=key;item.dataset.source=key;toggle.style.setProperty?.('--source-color',candySourceColors[key==='skill'?'skills':key]);toggle.setAttribute('aria-pressed',String(on));toggle.setAttribute('aria-label',name);
+   toggle.onclick=()=>{if(shard){ShardUI.toggleRecordSource(key);return;}const flags={...state.settings[group]?.[scope]};if(key==='skills')for(const [child] of candySkillSources)flags[child]=!on;else flags[key]=!on;commit({...state,settings:{...state.settings,[group]:{...state.settings[group],[scope]:flags}}},null);};
    item.append(toggle);
    if(!shard&&key==='skills'){const expanded=root.dataset.skillsExpanded==='true',arrow=el('button',expanded?'▲':'▼','candy-skill-expand');arrow.type='button';arrow.style.setProperty?.('--source-color',candySourceColors.skills);arrow.setAttribute('aria-label','スキルの内訳を展開・収納');arrow.setAttribute('aria-expanded',String(expanded));arrow.onclick=()=>{root.dataset.skillsExpanded=expanded?'false':'true';filterControls(root,scope,records,kind);};item.append(arrow);}
    item.append(el('small',on&&amount&&total?(amount/total*100).toFixed(1)+'%':'—','candy-source-percent'));if(['week','month'].includes(scope))item.append(qel('small',on?(shard?(amount?(Math.round(amount/1000)/10).toFixed(1)+'万':'0'):amount.toLocaleString('ja-JP')+'個'):'—','candy-source-amount'));root.append(item);
@@ -98,10 +102,10 @@ const SummaryExtras=(()=>{
   const input=records;records=candyRecords(records,'types');
   $('candy-source-totals').replaceChildren();$('candy-source-totals').hidden=true;
   const root=$('candy-list');root.replaceChildren();
-  const order=candySources.map(([key])=>key),labels=Object.fromEntries(candySources);
+  const order=candySources.map(([key])=>key),labels=Object.fromEntries(visibleCandySources('types'));
   const switches=el('div');filterControls(switches,'types',input);root.append(switches);
   const groups=candyGroups(records);
-  if(!groups.length){root.append(el('p',order.some(key=>candySourceVisible(key,'types'))?'この条件のアメの記録はありません。':'集計対象の獲得方法が選択されていません。'));return;}
+  if(!groups.length){const empty=el('p',order.some(key=>candySourceVisible(key,'types'))?'この条件のアメの記録はありません。':'集計対象の獲得方法が選択されていません。');root.append(empty);if(typeof SummaryPie!=='undefined')SummaryPie.attach('pokemon-candy',root,empty,[]);return;}
   const sources=order.filter(key=>candySourceVisible(key,'types')&&groups.some(g=>g.sources[key]));
   const scroll=el('div',undefined,'candy-table-scroll'),table=el('table',undefined,'candy-totals-table');
   scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','種類別アメの合計(横スクロール)');
@@ -115,6 +119,7 @@ const SummaryExtras=(()=>{
    line.append(qel('td',g.total.toLocaleString('ja-JP')+'個','candy-table-total'));body.append(line);
   }
   table.append(body);scroll.append(table);root.append(scroll);
+  if(typeof SummaryPie!=='undefined')SummaryPie.attach('pokemon-candy',root,scroll,SummaryPie.pokemonGroups(groups));
  }
 
  function monthly(kind,records,day){return CandyGraphs.monthly(records,day,kind);}
@@ -123,9 +128,9 @@ const SummaryExtras=(()=>{
   const panels=candyColumns(groups),pages=[],canvas=document.createElement('canvas');canvas.width=1200;
   const c=canvas.getContext('2d');if(!c)throw Error('画像描画に対応していません。');
   const ink='#202124',muted='#777C80',line='#ECEDEE',colors=candySourceColors;
-  const font=(size,bold=false)=>{c.font=`${bold?600:400} ${size}px -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", sans-serif`;};
+  const font=(size,bold=false,numeric=false)=>{c.font=`${bold?600:400} ${size}px ${numeric?'Montserrat, "M PLUS 1p"':'"M PLUS 1p"'}, -apple-system, BlinkMacSystemFont, sans-serif`;};
   const wrap=(value,width,size)=>{font(size);const rows=[''];for(const ch of String(value)){const i=rows.length-1,trial=rows[i]+ch;if(rows[i]&&(c.measureText?c.measureText(trial).width:trial.length*size)>width)rows.push(ch);else rows[i]=trial;}return rows;};
-  const text=(value,x,y,size=34,bold=false,right=false,color=ink)=>{font(size,bold);c.fillStyle=color;c.textAlign=right?'right':'left';c.fillText(String(value),x,y);};
+  const text=(value,x,y,size=34,bold=false,right=false,color=ink)=>{font(size,bold,bold&&/^[\d,.]+(?:個)?$/.test(String(value)));c.fillStyle=color;c.textAlign=right?'right':'left';c.fillText(String(value),x,y);};
   const rule=y=>{c.strokeStyle=line;c.lineWidth=1;c.beginPath();c.moveTo(60,y);c.lineTo(1140,y);c.stroke();};
   const periodLines=wrap(period,1080,30),top=230+periodLines.length*40;
   const prepared=groups.map(g=>({g,lines:wrap(candyName(g.name),420,42)}));
@@ -163,8 +168,8 @@ const SummaryExtras=(()=>{
   for(const [kind,sources] of [['candy',candySources],['shard',shardSources]])for(const [key] of sources){const input=$('aggregate-'+kind+'-'+key);if(!input)continue;input.onchange=()=>commit({...state,settings:{...state.settings,[kind==='candy'?'aggregateCandy':'aggregateShards']:{...C.aggregationSettings(state.settings)[kind==='candy'?'aggregateCandy':'aggregateShards'],[key]:input.checked}}},null);}
 
   for(const [key,id] of Object.entries(settingKeys))$('setting-'+id).onchange=()=>commit({...state,settings:{...state.settings,[id]:$('setting-'+id).checked}},null);
-  $('create-candy-image').onclick=()=>{try{const period=RangePicker.get('period');ImagePreview.open('ポケモンのアメ一覧',imagePages(candyGroups(candyRecords(filteredRecords(),'types')),summaryTitle(period)));}catch(e){notice('画像を作成できませんでした：'+e.message);}};
+  $('create-candy-image').onclick=async()=>{try{if(typeof SectionImages!=='undefined')await SectionImages.readyFonts();const period=RangePicker.get('period');ImagePreview.open('ポケモンのアメ一覧',imagePages(candyGroups(candyRecords(filteredRecords(),'types')),summaryTitle(period)));}catch(e){notice('画像を作成できませんでした：'+e.message);}};
  }
  function settings(){for(const [kind,sources] of [['candy',candySources],['shard',shardSources]])for(const [key] of sources){const input=$('aggregate-'+kind+'-'+key);if(input)input.checked=aggregateVisible(kind,key);}for(const [key,id] of Object.entries(settingKeys))$('setting-'+id).checked=shardVisible(key);}
- return {otherVisible,orderedSources,allowedRecord,shardSourceVisible,shardRecords,visibleShardSources,aggregateVisible,localVisible,candySource,candySourceVisible,filterControls,sourceColor:key=>candySourceColors[key==='skill'?'skills':key==='cluster'?'other':key],periodCaption,candyRecords,visibleCandySources,recordSummary,sourceTotals,candySources,shardSources,shardKey,shardVisible,candyGroups,candyList,monthly,imagePages,init,settings};
+ return {otherVisible,orderedSources,allowedRecord,shardSourceVisible,shardRecords,visibleShardSources,aggregateVisible,localVisible,candySource,candySourceVisible,filterControls,skillDisplayName,sourceColor:key=>candySourceColors[key==='skill'?'skills':key==='cluster'?'other':key],periodCaption,candyRecords,visibleCandySources,recordSummary,sourceTotals,candySources,shardSources,shardKey,shardSummaryKey,shardVisible,candyGroups,candyList,monthly,imagePages,init,settings};
 })();

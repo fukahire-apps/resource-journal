@@ -34,16 +34,16 @@ function resourceNotice(r,resource='candy',source=''){
  const parts=[],amount=resource==='shards'?0:r.amount,shards=resource==='shards'?r.amount:r.shardAmount;
  if(shards>0)parts.push('ゆめのかけら ×'+shards.toLocaleString('ja-JP'));
  if(amount>0)parts.push((r.candy||'アメ')+' ×'+amount.toLocaleString('ja-JP'));
- return source+'：'+(parts.length?parts.join('、')+' を保存':['mew','delibird','skill','lucky'].includes(r.method)?'スキル発動のみを保存':(resource==='shards'?'ゆめのかけら':'アメ')+' ×0 を保存');
+ return source+'：'+(parts.length?parts.join('、')+' を記録':['mew','delibird','skill','lucky'].includes(r.method)?'スキル発動のみを記録':(resource==='shards'?'ゆめのかけら':'アメ')+' ×0 を記録');
 }
 function sleepResourceNotice(next,date,number,resource){
  const row=SleepResearch.researchRows(next,date).find(r=>r.number===number),r=row?.record;
- if(!r)return '睡眠リサーチを保存';
+ if(!r)return '睡眠リサーチを記録';
  if(resource==='shards')return resourceNotice(r,'shards','睡眠リサーチ('+number+'回目)');
  const session=row.kind==='session'?r:row.sleepSession,amounts=new Map();
  for(const e of session?.entries||[])amounts.set(e.candy,(amounts.get(e.candy)||0)+e.amount);
  const parts=[...amounts].filter(([,n])=>n>0).map(([name,n])=>name+' ×'+n.toLocaleString('ja-JP'));
- return '睡眠リサーチ('+number+'回目)：'+(parts.length?parts.join('、')+' を保存':'アメ0個を保存');
+ return '睡眠リサーチ('+number+'回目)：'+(parts.length?parts.join('、')+' を記録':'アメ0個を記録');
 }
 function skillRecordHeading(p){
  const head=el('h3',undefined,'skill-record-heading');head.append(el('span',C.speciesName(p.species),'skill-species'));
@@ -83,7 +83,7 @@ let sorting=false,editingId=null,editPool=[];
 
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const old=JSON.parse(raw);state=C.migrate(old,candyMap);if(old.version===1){localStorage.setItem(KEY+'-before-v2',raw);localStorage.setItem(KEY,JSON.stringify(state));}}else{for(let i=0;i<5;i++){const species=localStorage.getItem('pokemon-slot-'+i);if(names.includes(species)){const p={id:uid(),species,nickname:'',profile:null};state.pokemon.push(p);state.team[i]=p.id;}}localStorage.setItem(KEY,JSON.stringify(state));}}catch(e){blocked=true;notice('保存データを読み込めません。上書きを停止しました。設定からバックアップを書き出してください。');}}
 // 履歴と編成をまとめて保存。保存できた時だけ画面の状態を確定します。
-function commit(next,message,refresh=true){if(blocked){notice('保存を停止しています。設定からバックアップの復元が必要です。',true);return false;}try{const checked=C.migrate(next,candyMap);localStorage.setItem(KEY,JSON.stringify(checked));state=checked;if(typeof SleepUI!=='undefined'&&message==='バックアップを復元しました。'){SleepUI.reset();if(typeof SocialUI!=='undefined')SocialUI.reset();}if(refresh)render();if(message)notice(message);if(typeof SaveFeedback!=='undefined')SaveFeedback.saved();return true;}catch(e){notice('保存できませんでした：'+e.message,true);return false;}}
+function commit(next,message,refresh=true){if(blocked){notice('保存を停止しています。設定からバックアップの復元が必要です。',true);return false;}try{const checked=C.migrate(message==='バックアップを復元しました。'?next:FieldHistory.syncSaved(state,next),candyMap),fieldSaved=JSON.stringify((checked.fieldHistory||[]).filter(r=>r.scope==='record'))!==JSON.stringify((state.fieldHistory||[]).filter(r=>r.scope==='record'));localStorage.setItem(KEY,JSON.stringify(checked));state=checked;if(fieldSaved&&typeof FieldHistoryUI!=='undefined')FieldHistoryUI.saved();if(typeof SleepUI!=='undefined'&&message==='バックアップを復元しました。'){SleepUI.reset();if(typeof SocialUI!=='undefined')SocialUI.reset();}if(refresh)render();if(message)notice(message);if(typeof SaveFeedback!=='undefined')SaveFeedback.saved();return true;}catch(e){notice('保存できませんでした：'+e.message,true);return false;}}
 function button(text,action,cls){const b=el('button',text,cls);b.type='button';b.onclick=action;return b;}
 function row(parent,name,value,cls){const r=el('div',undefined,'row '+(cls||''));r.append(el('span',name),qel('strong',value));parent.append(r);}
 function quantityText(node,text,showUnit=true){
@@ -110,7 +110,7 @@ function record(method,slot,amount,actorId){const date=recordDate();if(!Number.i
 // 合計カードだけで使う表示用の表。集計済みの値を列に分けます。
 function totalBreakdown(parent,amountLabel){const table=el('table',undefined,'total-breakdown'),head=el('thead'),tr=el('tr'),body=el('tbody');for(const text of ['', '回数',amountLabel]){const th=el('th',text);th.scope='col';tr.append(th);}head.append(tr);table.append(head,body);parent.append(table);return body;}
 function totalBreakdownRow(body,name,count,amount,cls='',details=null){const tr=el('tr',undefined,cls),nameCell=el('th',name),countCell=qel('td',count===null?'―':count+'回');nameCell.scope='row';if(details!==null){const detail=el('span',undefined,'quantity');detail.append(el('span',String(details),'quantity-number'),el('span','件','quantity-unit'));countCell.append(' ',detail);}tr.append(nameCell,countCell,qel('td',amount+'個'));body.append(tr);}
-function totals(parent,records,title,hideEmpty=false,sourceVisible=()=>true){parent.replaceChildren(el('small',title),qel('div',`${C.sum(records)}個`,'total'));const body=totalBreakdown(parent,'アメ');for(const [key,name] of SummaryExtras.candySources){if(!sourceVisible(key))continue;const rs=records.filter(r=>SummaryExtras.candySource(r)===key);if((key==='other'||hideEmpty)&&!rs.length)continue;const count=key==='social'?(rs.every(r=>r.groupId)?new Set(rs.map(r=>r.groupId)).size:null):recordCount(rs);totalBreakdownRow(body,name,count,C.sum(rs),key,key==='social'?rs.length:null);}}
+function totals(parent,records,title,hideEmpty=false,sourceVisible=()=>true){parent.replaceChildren(el('small',title),qel('div',`${C.sum(records)}個`,'total'));const body=totalBreakdown(parent,'アメ');for(const [key,name] of SummaryExtras.candySources){if(!sourceVisible(key))continue;const rs=records.filter(r=>SummaryExtras.candySource(r)===key);if((key==='other'||hideEmpty)&&!rs.length)continue;const count=key==='social'?(rs.every(r=>r.groupId)?new Set(rs.map(r=>r.groupId)).size:null):recordCount(rs);totalBreakdownRow(body,key==='skills'?SummaryExtras.skillDisplayName('breakdown'):name,count,C.sum(rs),key,key==='social'?rs.length:null);}}
 
 
 function renderRecord(){
@@ -150,10 +150,11 @@ function renderRecord(){
  $('record-candy-heading').hidden=!root.children.length&&$('nap-island-section').hidden;
  if(typeof SkillActions!=='undefined')SkillActions.render();
 }
-function headingTotal(id,amount,unit='個'){const body=$(id),heading=body?.parentElement?.querySelector('h3');if(!heading)return;heading.classList.add('heading-with-total');let total=heading.querySelector('.heading-total');if(!total){total=el('span',undefined,'heading-total');heading.append(total);}quantityText(total,'合計 '+amount.toLocaleString('ja-JP')+unit);}
+function headingTotal(id,amount,unit='個'){const body=$(id),heading=body?.parentElement?.querySelector('h3');if(!heading)return;heading.classList.add('heading-with-total');let target=heading;if(typeof SummaryPie!=='undefined'&&body.closest?.('#summary,#shards')){target=id==='candy-list'?body.querySelector('.summary-view-head'):body.parentElement.querySelector('.section-total-row');if(!target&&id!=='candy-list'){target=el('div',undefined,'section-total-row');(heading.parentElement.classList.contains('summary-section-head')?heading.parentElement:heading).after(target);}target=target||heading;}let total=target.querySelector('.heading-total');if(!total){total=el('span',undefined,'heading-total');target.prepend(total);}quantityText(total,'合計 '+amount.toLocaleString('ja-JP')+unit);}
 function historicalActors(method){const species=methods[method],map=new Map();for(const p of state.pokemon)if(p.species===species)map.set(p.id,label(p));for(const r of state.records)if(r.method===method&&r.context?.actorId){const p=actorOf(r.context);if(!map.has(p.id))map.set(p.id,label(p)+'(登録解除済み)');}return [...map].map(([id,text],i)=>({id,text}));}
 function renderActorFilters(){
  const m=$('analysis-method'),old=m.value;m.replaceChildren();for(const method of ['mew','delibird'])if(enabled(method))m.add(new Option(methods[method],method));if([...m.options].some(o=>o.value===old))m.value=old;
+ let choices=$('analysis-method-buttons');if(!choices){choices=el('div',undefined,'analysis-method-buttons');choices.id='analysis-method-buttons';m.closest('label').before(choices);}m.closest('label').hidden=true;choices.replaceChildren();for(const option of m.options){const item=el('div',undefined,'candy-source-choice'),choice=button(option.textContent,()=>{m.value=option.value;m.onchange();});choice.type='button';choice.dataset.source=option.value;choice.style.setProperty('--source-color',SummaryExtras.sourceColor('skills'));choice.setAttribute('aria-pressed',String(option.value===m.value));item.append(choice);choices.append(item);}
  const a=$('analysis-actor');optionList(a,historicalActors(m.value),a.value,'全個体');a.closest('label').hidden=m.value==='mew';
  $('analysis-card').hidden=!enabled('mew')&&!enabled('delibird');
 }
@@ -165,7 +166,8 @@ function summaryTitle(period){if(!period)return '全期間のアメ';const short
 function renderSummary(){
  PeriodPicker.sync();
  $('create-mew-image').hidden=!enabled('mew')&&!enabled('delibird');
- const all=filteredRecords(),rs=SummaryExtras.candyRecords(all,'breakdown'),period=RangePicker.get('period');$('range-label').textContent=period?`${C.displayDate(period[0])} 04:00 〜 ${C.displayDate(period[1])} 04:00`:'全期間';totals($('summary-total'),rs,SummaryExtras.periodCaption(period),false,key=>SummaryExtras.candySourceVisible(key,'breakdown'));SummaryExtras.filterControls($('candy-breakdown-filters'),'breakdown',all);
+ const all=filteredRecords(),rs=SummaryExtras.candyRecords(all,'breakdown'),period=RangePicker.get('period');$('range-label').textContent=period?`${C.displayDate(period[0])} 04:00 〜 ${C.displayDate(period[1])} 04:00`:'全期間';let filters=$('candy-breakdown-filters');totals($('summary-total'),rs,SummaryExtras.periodCaption(period),false,key=>SummaryExtras.candySourceVisible(key,'breakdown'));if(!filters?.isConnected){filters=el('div');filters.id='candy-breakdown-filters';}SummaryExtras.filterControls(filters,'breakdown',all);
+ if(typeof SummaryPie!=='undefined'){SummaryPie.attach('candy-sources',$('summary-total'),$('summary-total').querySelector('.total-breakdown'),SummaryExtras.visibleCandySources('breakdown').map(([key,name])=>({name,value:C.sum(rs.filter(r=>SummaryExtras.candySource(r)===key)),color:SummaryExtras.sourceColor(key)})));$('summary-total').insertBefore(filters,$('summary-total').querySelector('.total-breakdown'));}
  const calendarRs=SummaryExtras.candyRecords(allCandyRecords());SummaryExtras.filterControls($('candy-week-filters'),'week',calendarRs.filter(r=>C.inRange(r,C.range('week',$('summary-date').value||C.gameDay(new Date())))));SummaryExtras.filterControls($('candy-month-filters'),'month',calendarRs.filter(r=>C.gameDay(r.datetime).startsWith(($('summary-date').value||C.gameDay(new Date())).slice(0,7))));
  const month=($('summary-date').value||C.gameDay(new Date())).slice(0,7);$('candy-month').textContent=month.replace('-','年')+'月';
  WeeklyChart.render($('candy-weekly-chart'),calendarRs,$('summary-date').value||C.gameDay(new Date()));
@@ -179,7 +181,7 @@ function renderSummary(){
 function renderSlotCounts(records){
  const root=$('slot-counts');root.replaceChildren();
  const source=records.filter(r=>r.method==='help');
- const heading=root.closest('.card')?.querySelector('h3');if(heading){let count=heading.querySelector('.heading-count');if(!count){count=el('span',undefined,'heading-count');heading.insertBefore(count,heading.querySelector('.heading-total'));}quantityText(count,source.length+'回');}
+ const heading=root.closest('.card')?.querySelector('h3');if(heading){let target=heading.closest('.card')?.querySelector('.section-total-row');if(!target){target=el('div',undefined,'section-total-row');heading.after(target);}let count=heading.querySelector('.heading-count')||target.querySelector('.heading-count');if(!count)count=el('span',undefined,'heading-count');target.prepend(count);quantityText(count,source.length+'回');}
  if(!source.length){root.append(el('p','この期間の記録はありません。'));return;}
  const group=el('div',undefined,'slot-group help');
  const table=el('table',undefined,'slot-table slot-horizontal'),head=el('thead'),headRow=el('tr'),body=el('tbody');
@@ -375,8 +377,9 @@ let lastDay=C.gameDay(new Date());setInterval(()=>{const day=C.gameDay(new Date(
 ProfileForm.init();TeamUI.init();IndividualDev.init();IndividualImportUI.init();MewUI.init();SkillUI.registration('');DateUI.init();FieldHistoryUI.init();NapIsland.init();SleepUI.initNavigation();SocialUI.init();$('history-date').value=C.gameDay(new Date());ShardUI.init();$('datetime').value=C.localInput();$('summary-date').value=C.gameDay(new Date());load();renderCatalog();render();DateUI.update();
 
 // 画像用の集計は履歴を読むだけで、保存データを変更しません。
-$('create-mew-image').onclick=()=>{
+$('create-mew-image').onclick=async()=>{
  try{
+  if(typeof SectionImages!=='undefined')await SectionImages.readyFonts();
   const period=RangePicker.get('period');
   const method=$('analysis-method').value,records=filteredRecords().filter(r=>r.method===method&&(method!=='mew'||r.amount>0));
   const title=period?`${C.displayDate(period[0])} 04:00 〜 ${C.displayDate(period[1])} 04:00`:'全期間';

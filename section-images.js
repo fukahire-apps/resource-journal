@@ -6,7 +6,7 @@ const SectionImages=(()=>{
   ['candy-types','ポケモンのアメ一覧','#candy-list','candy','create-candy-image'],
   ['candy-week','週間のアメ','#candy-weekly-chart','candy'],
   ['candy-month','月間のアメ','#candy-calendar','candy'],
-  ['candy-help','アメ拾いの記録','#slot-counts','candy'],
+  ['candy-help','アメ拾い','#slot-counts','candy'],
   ['candy-get','メインスキルの記録','#analysis','candy','create-mew-image'],
   ['shard-breakdown','ゆめのかけらの記録','#shard-total','shard'],
   ['shard-week','週間のゆめのかけら','#shard-weekly-chart','shard'],
@@ -15,7 +15,8 @@ const SectionImages=(()=>{
  const text=e=>(e?.innerText??e?.textContent??'').trim().replace(/([\d,])\s+(個|匹|回)(?=\s|$)/g,'$1$2');
  const visible=e=>!e.hidden&&getComputedStyle(e).display!=='none';
  function table(e){return {type:'table',caption:text(e.querySelector('caption')),rows:[...e.rows].filter(r=>!r.hidden).map(r=>({header:r.parentElement.tagName==='THEAD',strong:r.classList.contains('mew-all')||r.classList.contains('mew-totals'),sourceColor:r.className.startsWith('shard-method-')?getComputedStyle(r.cells[0]).color:undefined,cells:[...r.cells].map(c=>({text:text(c),color:getComputedStyle(c).color}))}))};}
- function legend(e){return {type:'legend',items:[...e.children].filter(visible).map(x=>{const dot=x.querySelector('i'),fallback=dot?.className?.startsWith('shard-source-')?document.querySelector('#shard-weekly-chart .'+dot.className):null;let color=getComputedStyle(dot||x).backgroundColor;if(color==='rgba(0, 0, 0, 0)'&&fallback)color=getComputedStyle(fallback).backgroundColor;return {text:text(x),color};})};}
+ function sources(e){return {type:'sources',items:[...e.children].filter(x=>x.classList.contains('candy-source-choice')).map(x=>({button:x.querySelector('button[data-source]'),percent:x.querySelector('.candy-source-percent')})).filter(x=>x.button?.getAttribute('aria-pressed')==='true').map(x=>({text:text(x.button),percent:text(x.percent),color:getComputedStyle(x.button).backgroundColor}))};}
+ function pie(e){const svg=e.querySelector('svg'),width=e.getBoundingClientRect().width;return {type:'pie',ranked:e.classList.contains('summary-pie-pokemon'),pieRatio:width&&svg?svg.getBoundingClientRect().width/width:1.1/2.1,items:[...e.querySelectorAll('.summary-pie-pokemon-row,.summary-pie-source-row')].map(row=>({name:text(row.querySelector('.summary-pie-name')),percent:text(row.querySelector('.summary-pie-percent')),amount:text(row.querySelector('.summary-pie-amount')),rank:text(row.querySelector('.summary-pie-rank')),value:Number(row.dataset.value),color:getComputedStyle(row.querySelector('.summary-pie-rank')).backgroundColor})),empty:text(e.querySelector('p'))};}
  function week(e,shard){
   const cols=[...e.querySelectorAll(shard?'.weekly-column':'.capsule-day')];
   return {type:'week',topAtBar:!shard,days:cols.map(d=>{
@@ -27,7 +28,7 @@ const SectionImages=(()=>{
  function blocks(root){
   const out=[];
   function visit(e){
-   if(!visible(e)||e.matches('button,input,select,label,dialog,.candy-source-switches,.graph-detail,.heat-key,.summary-section-head,h3'))return;
+   if(!visible(e)||e.matches('button,input,select,label,dialog,.candy-source-switches,.graph-detail,.heat-key,.summary-section-head,.summary-view-head,.section-total-row,.summary-pie-switch,.candy-chart-legend,.shard-chart-legend,.month-legend,h3'))return;
    if(e.matches('.capsule-visual,.shard-stacked-chart'))return;
    if(e.matches('.calendar')){out.push(month(e));return;}
    if(e.matches('#candy-weekly-chart,#shard-weekly-chart')){
@@ -35,7 +36,7 @@ const SectionImages=(()=>{
     out.push(week(e,e.id==='shard-weekly-chart'));return;
    }
    if(e.tagName==='TABLE'){out.push(table(e));return;}
-   if(e.matches('.candy-chart-legend,.shard-chart-legend,.month-legend')){out.push(legend(e));return;}
+   if(e.matches('.summary-pie')){out.push(pie(e));return;}
    if(e.matches('details')&&!e.open){const s=e.querySelector('summary');if(s)out.push({type:'text',text:text(s),muted:true});return;}
    if(e.matches('.source-total-row,.mew-position-head')){out.push({type:'text',text:text(e).replace(/\n/g,'　'),bold:true});return;}
    if(e.matches('p,h4,h5,caption,.total,.mew-amount-note,small,summary')){const value=text(e);if(value)out.push({type:'text',text:value,bold:e.matches('h4,h5,.total'),size:e.matches('.total')?34:undefined,muted:e.matches('p,small,summary')});return;}
@@ -50,14 +51,14 @@ const SectionImages=(()=>{
   if(id.endsWith('-week'))label=text(root.querySelector('.weekly-range'));
   if(id.endsWith('-month'))label=text(section.querySelector('.calendar-month'));
   const result=[];
-  if(graph){const controls=section.querySelector('.candy-source-switches');if(controls)result.push({type:'legend',items:[...controls.querySelectorAll('button[aria-pressed=true]')].map(b=>({text:text(b),color:getComputedStyle(b).backgroundColor}))});}
   if(id==='candy-get')for(const select of document.querySelectorAll('#analysis-card select'))if(!select.closest('label').hidden)result.push({type:'text',text:text(select.closest('label').firstChild)+'：'+text(select.selectedOptions[0]),muted:true});
-  const heading=section?.querySelector('h3 .heading-total');if(heading)result.push({type:'text',text:text(heading),bold:true,size:26});
+  const amount=id.endsWith('-breakdown')?root.querySelector('.summary-view-amount .total'):section?.querySelector('.heading-total');if(amount)result.push({type:'text',text:text(amount),bold:true,size:26});
+  const controls=id==='candy-breakdown'?root.querySelector('#candy-breakdown-filters'):id==='shard-breakdown'?root.querySelector('#shard-record-filters'):id==='candy-types'?root.querySelector('.candy-source-switches'):section?.querySelector('.candy-source-switches');if(controls){const active=sources(controls);if(active.items.length)result.push(active);}
   if(id.endsWith('-breakdown')){result.push(...blocks(root));const rows=[...root.querySelectorAll('tbody tr')];if(rows.every(r=>/^0回$/.test(text(r.cells[1]))))result.push({type:'text',text:'この条件の記録はありません。',muted:true});}
   else if(graph){for(const child of section.children)if(!child.matches('h3,.summary-section-head,.graph-detail,.heat-key,.calendar-month'))result.push(...blocks(child));}
   else{if(id==='candy-types')result.push(...blocks(document.querySelector('#candy-source-totals')));result.push(...blocks(root));}
   if(!result.length)result.push({type:'text',text:'この条件の記録はありません。',muted:true});
-  return {title:(kind==='candy'?'アメ':'ゆめのかけら')+'｜'+title,period:label,blocks:result};
+  return {title:(kind==='candy'?'アメ':'ゆめのかけら')+'｜'+title,period:label,blocks:result.some(block=>block.type==='pie')?result.filter(block=>block.type!=='sources'):result};
  }
  // 非表示タブも同じ幅で一時測定する。表示タブ・スクロール・保存状態は変更しない。
  function capture(key){
@@ -71,9 +72,9 @@ const SectionImages=(()=>{
   return {title,period:'各項目の対象期間を表示',blocks:keys.flatMap(key=>{const m=capture(key);return [{type:'section',text:m.title,period:m.period},...m.blocks];})};
  }
  function pages(model){
-  const W=600,M=28,inner=W-M*2,limit=1800,ink='#202124',muted='#777C80',line='#ECEDEE',font='-apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", sans-serif';
+  const W=600,M=28,inner=W-M*2,limit=1800,ink='#202124',muted='#777C80',line='#ECEDEE',font='"M PLUS 1p", -apple-system, BlinkMacSystemFont, sans-serif',numberFont='Montserrat, "M PLUS 1p", -apple-system, BlinkMacSystemFont, sans-serif';
   const probe=document.createElement('canvas').getContext('2d');if(!probe)throw Error('この環境では画像を生成できません。');
-  const setFont=(c,size,bold=false)=>c.font=`${bold?600:400} ${size}px ${font}`;
+  const setFont=(c,size,bold=false,numeric=false)=>c.font=`${bold?600:400} ${size}px ${numeric?numberFont:font}`;
   function wrap(value,width,size){setFont(probe,size);const lines=[];for(const paragraph of String(value).split('\n')){let row='';for(const ch of paragraph.match(/[\d,]+(?:個|匹|回)|[\s\S]/g)||[]){if(row&&probe.measureText(row+ch).width>width){lines.push(row);row='';}row+=ch;}lines.push(row);}return lines;}
   const tasks=[];
   for(const b of model.blocks){
@@ -84,7 +85,8 @@ const SectionImages=(()=>{
     if(b.caption)tasks.push({type:'text',text:b.caption,bold:true,lines:wrap(b.caption,inner,18),size:18,height:38});
     for(const row of b.rows){const r=prepare(row),max=Math.max(...r.lines.map(x=>x.length));for(let start=0;start<max;start+=35){const part={...r,lines:r.lines.map(x=>x.slice(start,start+35))};tasks.push({type:'row',row:part,head,widths,size:n>=6?14:16,height:Math.max(42,Math.min(35,max-start)*23+18)});}}
    }else if(b.type==='text'){const size=b.size||17,lines=wrap(b.text,inner,size);for(let i=0;i<lines.length;i+=35)tasks.push({...b,size,lines:lines.slice(i,i+35),height:Math.min(35,lines.length-i)*(size+8)+14});}
-   else if(b.type==='legend'){let y=0,x=0;const items=[];for(const item of b.items){const lines=wrap(item.text,inner-22,14),w=Math.min(inner,Math.max(...lines.map(s=>{setFont(probe,14);return probe.measureText(s).width;}))+30);if(x+w>inner){x=0;y+=30;}items.push({...item,lines,x,y});x+=w;}tasks.push({...b,items,height:y+Math.max(30,...items.map(i=>i.lines.length*21+8))});}
+   else if(b.type==='sources'){const count=b.items.length;tasks.push({...b,height:count?78:0});}
+   else if(b.type==='pie')tasks.push({...b,height:b.items.length?Math.max(280,b.items.length*28+16):52});
    else tasks.push({...b,height:b.type==='week'?370:Math.ceil((b.offset+b.days.length)/7)*84+70});
   }
   const titleLines=wrap(model.title,inner,24),periodLines=wrap(model.period,inner,16),top=36+titleLines.length*32+periodLines.length*24+22;
@@ -104,14 +106,18 @@ const SectionImages=(()=>{
   }if(batch.length||!batches.length)batches.push(batch);
   return batches.map((batch,page)=>{
    const h=Math.max(300,top+batch.reduce((n,t)=>n+t.height,0)+54),canvas=document.createElement('canvas');canvas.width=W*2;canvas.height=Math.ceil(h*2);const c=canvas.getContext('2d');if(!c)throw Error('画像を生成できません。');c.scale(2,2);c.fillStyle='#FFFFFF';c.fillRect(0,0,W,h);
-   function txt(value,x,y,size=17,bold=false,color=ink,align='left'){setFont(c,size,bold);c.fillStyle=color;c.textAlign=align;c.fillText(String(value),x,y);}
+   function txt(value,x,y,size=17,bold=false,color=ink,align='left'){setFont(c,size,bold,(bold&&/\d/.test(String(value)))||/^[\d,.]+(?:万|個|回|匹|%)?$/.test(String(value)));c.fillStyle=color;c.textAlign=align;c.fillText(String(value),x,y);}
+   function metricWidth(value,size){const parts=String(value).match(/^([\d,]+)([%個])$/);setFont(c,size,false,true);if(!parts)return c.measureText(value).width;const number=c.measureText(parts[1]).width;setFont(c,size*.8);return number+c.measureText(parts[2]).width;}
+   function metric(value,x,y,size){const parts=String(value).match(/^([\d,]+)([%個])$/);if(!parts){txt(value,x,y,size,false,ink,'right');return;}setFont(c,size*.8);const unitWidth=c.measureText(parts[2]).width;txt(parts[1],x-unitWidth,y,size,false,ink,'right');txt(parts[2],x,y,size*.8,false,ink,'right');}
+   function fit(value,width,size){setFont(c,size);let label=String(value);while(label.length>1&&c.measureText(label).width>width)label=label.slice(0,-2)+'…';return label;}
    function rule(y){c.beginPath();c.strokeStyle=line;c.lineWidth=1;c.moveTo(M,y);c.lineTo(W-M,y);c.stroke();}
    function rounded(x,y,w,h,r,color){if(w<=0||h<=0)return;c.beginPath();c.roundRect(x,y,w,h,Math.min(r,w/2,h/2));c.fillStyle=color;c.fill();}
    let y=36;for(const s of titleLines){txt(s,M,y,24,true);y+=32;}for(const s of periodLines){txt(s,M,y,16,false,muted);y+=24;}y=top;
    for(const t of batch){
     if(t.type==='section'){let yy=y+23;for(const line of t.lines){txt(line,M,yy,23,true);yy+=31;}for(const line of t.periodLines){txt(line,M,yy,16,false,muted);yy+=24;}}
     if(t.type==='text')t.lines.forEach((s,i)=>txt(s,M,y+t.size+i*(t.size+8),t.size,t.bold,t.muted?muted:ink));
-    if(t.type==='legend')for(const item of t.items){rounded(M+item.x,y+item.y+7,7,7,4,item.color==='rgba(0, 0, 0, 0)'?muted:item.color);item.lines.forEach((s,i)=>txt(s,M+item.x+14,y+item.y+15+i*21,14,false,muted));}
+    if(t.type==='sources')t.items.forEach((item,i)=>{const gap=6,w=(inner-gap*(t.items.length-1))/t.items.length,x=M+i*(w+gap),size=Math.min(14,Math.max(10,w/item.text.length)),labels=wrap(item.text,w-8,size).slice(0,2);rounded(x,y+3,w,43,6,item.color);labels.forEach((s,j)=>txt(s,x+w/2,y+(labels.length===1?30:21)+j*16,size,true,'#FFFFFF','center'));txt(item.percent,x+w/2,y+66,14,false,muted,'center');});
+    if(t.type==='pie'){if(!t.items.length){txt(t.empty||'この条件の記録はありません。',M,y+24,16,false,muted);}else{const total=t.items.reduce((n,item)=>n+item.value,0),left=inner*Math.min(.65,Math.max(.4,t.pieRatio||1.1/2.1)),r=Math.min((left-12)/2,(t.height-16)/2),cx=M+left/2,cy=y+r+8;let angle=-Math.PI/2;for(const item of t.items){const span=item.value/total*Math.PI*2;c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,r,angle,angle+span);c.closePath();c.fillStyle=item.color;c.fill();if(span>=.4){txt(t.ranked?item.rank||'その他':item.percent,cx+Math.cos(angle+span/2)*r*.62,cy+Math.sin(angle+span/2)*r*.62+5,t.ranked?16:13,true,'#FFFFFF','center');}angle+=span;}const x=M+left+8,rowH=28,start=y+8;const percentWidth=Math.max(...t.items.map(item=>metricWidth(item.percent,12)),25),amountWidth=Math.max(...t.items.map(item=>metricWidth(item.amount,12)),30),right=W-M,nameX=x+26,nameWidth=Math.max(12,right-nameX-percentWidth-amountWidth-12);for(const [i,item] of t.items.entries()){const yy=start+i*rowH;rounded(x,yy+3,20,20,10,item.color);if(t.ranked&&item.rank)txt(item.rank,x+10,yy+18,11,true,'#FFFFFF','center');txt(fit(item.name,nameWidth,13),nameX,yy+18,13,false,ink);metric(item.percent,right-amountWidth-6,yy+18,12);metric(item.amount,right,yy+18,12);}}}
     if(t.type==='row'){let x=M;for(let j=0;j<t.row.cells.length;j++){const color=t.row.header?muted:(!j&&t.row.sourceColor)||ink;t.row.lines[j].forEach((s,i)=>txt(s,j?x+t.widths[j]-7:x,y+25+i*23,t.size,t.row.strong||(!t.row.header&&j===1),color,j?'right':'left'));x+=t.widths[j];}rule(y+t.height-5);}
     if(t.type==='week'){
      const cw=inner/7,base=y+300;for(let i=0;i<3;i++)rule(y+38+i*111);
@@ -128,20 +134,22 @@ const SectionImages=(()=>{
    const url=canvas.toDataURL('image/png');if(!url.startsWith('data:image/png'))throw Error('画像が大きすぎるため生成できませんでした。');canvas.width=canvas.height=1;return url;
   });
  }
- function exportScope(key,scope){
-  try{const d=definitions.find(d=>d[0]===key);if(!d)throw Error('画像の項目が見つかりません。');
+ async function readyFonts(){if(document.fonts){try{await Promise.all([document.fonts.load('600 16px "M PLUS 1p"','あ'),document.fonts.load('600 16px Montserrat','123')]);await document.fonts.ready;}catch(_){/* CSS fallback fonts remain available offline. */}}}
+ async function exportScope(key,scope){
+  try{await readyFonts();
+   const d=definitions.find(d=>d[0]===key);if(!d)throw Error('画像の項目が見つかりません。');
    const keys=definitions.filter(x=>scope==='all'||x[3]===d[3]).map(x=>x[0]);
    const model=scope==='single'?capture(key):combined(keys,scope==='all'?'アメ＋ゆめのかけら':d[3]==='candy'?'アメのまとめ':'ゆめのかけらのまとめ');
    ImagePreview.open(model.title,pages(model));
   }catch(e){notice('画像を作成できませんでした：'+e.message);}
  }
- function open(key){exportScope(key,'single');}
+ function open(key){return exportScope(key,'single');}
 
  function init(){for(const [key,title,selector,kind,oldId] of definitions){const root=document.querySelector(selector);let head,b=oldId?document.getElementById(oldId):null;
-   if(key.endsWith('-breakdown')){head=el('div',undefined,'summary-section-head export-overview-heading');head.append(el('h3',title));root.before(head);const controls=$(key==='candy-breakdown'?'candy-breakdown-filters':'shard-record-filters');if(controls)head.after(controls);}
+   if(key.endsWith('-breakdown')){head=el('div',undefined,'summary-section-head export-overview-heading');head.append(el('h3',title));root.before(head);}
    else{const h=root.closest('.card').querySelector('h3');head=h.parentElement.classList.contains('summary-section-head')?h.parentElement:null;if(!head){head=el('div',undefined,'summary-section-head');h.before(head);head.append(h);}}
    if(!b){b=el('button','画像');b.type='button';b.id='export-'+key;head.append(b);}b.classList.add('section-image-button');b.dataset.sectionImage=key;b.setAttribute('aria-label',(kind==='candy'?'アメ':'ゆめのかけら')+'：'+title+'の画像を作成');b.onclick=()=>open(key);
   }}
- return {init,capture,pages,open,exportScope,combined,definitions};
+ return {init,capture,pages,open,exportScope,combined,definitions,readyFonts};
 })();
 SectionImages.init();
