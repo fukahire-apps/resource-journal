@@ -1,10 +1,10 @@
 // 表示用の集計は履歴から都度作り、localStorageには保存しません。
 const SummaryExtras=(()=>{
- const candySources=[['research','睡眠'],['social','フレンド'],['help','アメ拾い'],['skills','スキル'],['other','その他']];
+ const candySources=[['research','睡眠'],['social','フレンド'],['help','アメ拾い'],['skills','スキル'],['professor','博士'],['other','その他']];
  const candySkillSources=[['mew','ミュウ'],['delibird','デリバード'],['copy','スキルコピー'],['metronome','ゆびをふる']];
  const color=(token,fallback)=>{const value=typeof document!=='undefined'&&typeof getComputedStyle==='function'?getComputedStyle(document.documentElement).getPropertyValue(token):'';return typeof value==='string'&&value.trim()||fallback;};
- const candySourceColors={research:color('--source-research','#4f78a8'),social:color('--source-social','#4f8666'),help:color('--source-help','#ad625b'),skills:color('--source-skills','#9C7A31'),other:color('--source-other','#82919B')};
- const candySource=r=>{const key=C.actionCategory(r);return ['mew','delibird','copy','metronome'].includes(key)?'skills':['research','social','help'].includes(key)?key:'other';};
+ const candySourceColors={research:color('--source-research','#4f78a8'),social:color('--source-social','#4f8666'),help:color('--source-help','#ad625b'),skills:color('--source-skills','#9C7A31'),professor:color('--source-professor','#8870A5'),other:color('--source-other','#82919B')};
+ const candySource=r=>{const key=C.actionCategory(r);return ['mew','delibird','copy','metronome'].includes(key)?'skills':['research','social','help','professor'].includes(key)?key:'other';};
  const candyChild=r=>{const key=C.actionCategory(r);return ['mew','delibird','copy','metronome'].includes(key)?key:null;};
  const shardSources=[['research','睡眠リサーチ'],['skill','スキル'],['cluster','ゆめのかたまり'],['other','その他']];
  const shardSummarySources=[['research','睡眠'],['skill','メインスキル'],['other','その他']];
@@ -40,7 +40,10 @@ const SummaryExtras=(()=>{
  const shardSourceVisible=method=>(method==='other'?aggregateVisible('shard','other')||aggregateVisible('shard','cluster'):aggregateVisible('shard',method))&&shardSummaryOn(method);
  const shardRecords=records=>records.filter(r=>allowedRecord(r,'shard')&&shardSummaryOn(r.method));
  const visibleShardSources=()=>shardSummarySources.filter(([key])=>shardSourceVisible(key));
+ const expandedSkillScopes=new Set();
  function filterControls(root,scope,records,kind='candy'){
+  if(kind==='candy'&&root.dataset.skillsExpanded==='true')expandedSkillScopes.add(scope);
+  if(kind==='candy')root.dataset.skillsExpanded=String(expandedSkillScopes.has(scope));
   root.replaceChildren();root.className='candy-source-switches';root.setAttribute('aria-label',((kind==='shard'?{week:'週間のゆめのかけら',month:'月間のゆめのかけら'}:{types:'種類別アメ',week:'週間のアメ',month:'月間のアメ',breakdown:'獲得数の内訳'})[scope])+'の集計対象');
   const shard=kind==='shard',group='candyFilters',filtered=shard?shardRecords(records):candyRecords(records,scope),total=C.sum(filtered);
   for(const [key,title] of orderedSources(kind)){
@@ -49,7 +52,7 @@ const SummaryExtras=(()=>{
    toggle.type='button';toggle.dataset.source=key;item.dataset.source=key;toggle.style.setProperty?.('--source-color',candySourceColors[key==='skill'?'skills':key]);toggle.setAttribute('aria-pressed',String(on));toggle.setAttribute('aria-label',name);
    toggle.onclick=()=>{if(shard){ShardUI.toggleRecordSource(key);return;}const flags={...state.settings[group]?.[scope]};if(key==='skills')for(const [child] of candySkillSources)flags[child]=!on;else flags[key]=!on;commit({...state,settings:{...state.settings,[group]:{...state.settings[group],[scope]:flags}}},null);};
    item.append(toggle);
-   if(!shard&&key==='skills'){const expanded=root.dataset.skillsExpanded==='true',arrow=el('button',expanded?'▲':'▼','candy-skill-expand');arrow.type='button';arrow.style.setProperty?.('--source-color',candySourceColors.skills);arrow.setAttribute('aria-label','スキルの内訳を展開・収納');arrow.setAttribute('aria-expanded',String(expanded));arrow.onclick=()=>{root.dataset.skillsExpanded=expanded?'false':'true';filterControls(root,scope,records,kind);};item.append(arrow);}
+   if(!shard&&key==='skills'){const expanded=root.dataset.skillsExpanded==='true',arrow=el('button',expanded?'▲':'▼','candy-skill-expand');arrow.type='button';arrow.style.setProperty?.('--source-color',candySourceColors.skills);arrow.setAttribute('aria-label','スキルの内訳を展開・収納');arrow.setAttribute('aria-expanded',String(expanded));arrow.onclick=()=>{if(expanded)expandedSkillScopes.delete(scope);else expandedSkillScopes.add(scope);root.dataset.skillsExpanded=String(!expanded);filterControls(root,scope,records,kind);};item.append(arrow);}
    item.append(el('small',on&&amount&&total?(amount/total*100).toFixed(1)+'%':'—','candy-source-percent'));if(['week','month'].includes(scope))item.append(qel('small',on?(shard?(amount?(Math.round(amount/1000)/10).toFixed(1)+'万':'0'):amount.toLocaleString('ja-JP')+'個'):'—','candy-source-amount'));root.append(item);
   }
   if(!shard&&root.dataset.skillsExpanded==='true'){const children=el('div',undefined,'candy-skill-children');for(const [key,name] of candySkillSources){if(!aggregateVisible('candy',key))continue;const item=el('div',undefined,'candy-source-choice'),button=el('button',name),on=filterOn(scope,key);button.type='button';button.dataset.source=key;button.setAttribute('aria-pressed',String(on));button.setAttribute('aria-label',name);button.style.setProperty?.('--source-color',candySourceColors.skills);button.onclick=()=>commit({...state,settings:{...state.settings,candyFilters:{...state.settings.candyFilters,[scope]:{...state.settings.candyFilters?.[scope],[key]:!on}}}},null);item.append(button);children.append(item);}children.style.setProperty?.('--visible-skills',String(children.children.length||1));root.append(children);}root.style?.setProperty?.('--source-count',String(root.children.length-(!shard&&root.dataset.skillsExpanded==='true'?1:0)||1));
@@ -67,7 +70,7 @@ const SummaryExtras=(()=>{
   root.hidden=!root.children.length;
  }
  // 選択日付は操作部に一度だけ表示し、ここでは範囲の意味を説明する。
- function periodCaption(period){return period?Math.round((Date.parse(period[1])-Date.parse(period[0]))/86400000)+'日分の獲得数(04:00切替)':'保存済みのすべての記録';}
+ function periodCaption(period){if(!period)return '保存済みのすべての記録';const days=Math.round((Date.parse(period[1])-Date.parse(period[0]))/86400000);return days===1?C.displayDate(period[0]):days+'日分の獲得数(04:00切替)';}
  function recordSummary(){
   const date=recordDate();if(!Number.isFinite(date.getTime()))return;
   const day=C.gameDay(date),period=C.range('day',day),root=$('today-total'),wasOpen=root.querySelector('details')?.open||false;const heading=el('small',day===C.gameDay(new Date())?'今日の獲得数':'選択日の獲得数');if(C.localInput(date).slice(0,10)!==day)heading.append(el('span','集計日：'+C.displayDate(day)+'(04:00切替)','record-day-note'));root.replaceChildren(heading);

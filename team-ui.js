@@ -1,7 +1,9 @@
 // 編成内の表示状態だけを管理。保存する個体・編成・履歴の形式は変えません。
 const TeamUI=(()=>{
  let drag=null,suppressClick=false;
- let view='team',editing=false,editOrigin='roster';let columns=4,rosterView='skills',rosterSort='dex-asc';
+ let view='team',editing=false,editOrigin='roster',registerEntry='';let columns=4,rosterView='skills',rosterSort='dex-asc';
+ const sortModes=[['dex-asc','図鑑▲'],['dex-desc','図鑑▼'],['level-asc','Lv▲'],['level-desc','Lv▼']];
+ const typeNames={normal:'ノーマル',fire:'ほのお',water:'みず',electric:'でんき',grass:'くさ',ice:'こおり',fighting:'かくとう',poison:'どく',ground:'じめん',flying:'ひこう',psychic:'エスパー',bug:'むし',rock:'いわ',ghost:'ゴースト',dragon:'ドラゴン',dark:'あく',steel:'はがね',fairy:'フェアリー'};
  // 表示専用。個体IDや保存された名前・スキルは変更しない。
  function name(p){
   const root=el('span',undefined,'team-individual-name');
@@ -13,10 +15,10 @@ const TeamUI=(()=>{
  }
  // Both card lists use one display-only renderer; sorting never rewrites saved manual order.
  const level=p=>{const v=p?.profile?.level??p?.importedIndividual?.level;return Number.isFinite(Number(v))&&Number(v)>0?Number(v):null;};
- function sorted(members){const descending=rosterSort.endsWith('desc'),byLevel=rosterSort.startsWith('level'),dex=p=>nationalDex[p.species]??null;return [...members].sort((a,b)=>{const av=byLevel?level(a):dex(a),bv=byLevel?level(b):dex(b);if(av===null||bv===null)return av===bv?0:av===null?1:-1;return (av-bv)*(descending?-1:1)||(dex(a)??Infinity)-(dex(b)??Infinity)||String(a.id).localeCompare(String(b.id));});}
- function cardInfo(p){const info=el('div',undefined,'registered-info pokemon-card-info'),lv=level(p);info.append(el('small',lv===null?'':'Lv.'+lv,'pokemon-card-level'),el('strong',p.nickname?.trim()||C.speciesName(p.species)||'未確認','pokemon-card-nickname'),el('small',nationalDex[p.species]?'No.'+String(nationalDex[p.species]).padStart(3,'0'):'No.—','individual-number'),el('small',C.speciesName(p.species)||'未確認','pokemon-card-species'));if(p.provisional)info.append(el('small','仮登録','provisional-badge'));return info;}
+ function sorted(members){const descending=rosterSort.endsWith('desc'),byLevel=rosterSort.startsWith('level'),dex=p=>nationalDex[p.species]??null;return [...members].sort((a,b)=>{const av=byLevel?level(a):dex(a),bv=byLevel?level(b):dex(b);if(av===null||bv===null)return av===bv?(dex(a)??Infinity)-(dex(b)??Infinity)||String(a.id).localeCompare(String(b.id)):av===null?1:-1;return (av-bv)*(descending?-1:1)||(dex(a)??Infinity)-(dex(b)??Infinity)||String(a.id).localeCompare(String(b.id));});}
+ function cardInfo(p){const info=el('div',undefined,'registered-info pokemon-card-info'),lv=level(p),levelText=el('small',undefined,'pokemon-card-level'),speciesName=C.speciesName(p.species)||'未確認',species=el('small',undefined,'pokemon-card-species'),form=/^(.+?)(（.+）|\(.+\))$/.exec(speciesName),nickname=p.nickname?.trim();if(lv!==null)levelText.append(el('span','Lv.'),el('strong',String(lv)));if(form){species.classList.add('has-form');if(nickname)species.append(el('span',form[1],'pokemon-card-species-base'));species.append(el('span',form[2],'pokemon-card-species-form'));}else species.textContent=speciesName;info.append(levelText,el('strong',nickname||form?.[1]||speciesName,'pokemon-card-nickname'),species);if(p.provisional)info.append(el('small','仮登録','provisional-badge'));return info;}
 
- function typeBorder(node,p){if(typeof PokemonTypes!=='undefined')PokemonTypes.apply(node,p?.species);}
+ function typeBorder(node,p){if(typeof PokemonTypes!=='undefined'){PokemonTypes.apply(node,p?.species);if(node.dataset.pokemonType)node.dataset.pokemonTypeLabel=typeNames[node.dataset.pokemonType]||'';}}
  // Saved lineups use IDs only; current and saved slots are copied independently.
  const savedTeam=i=>state.savedTeams?.[i]||{name:'チーム'+(i+1),team:null};
  function saveTeam(i,changes,refresh=true){const savedTeams=Array.from({length:8},(_,n)=>state.savedTeams?.[n]||null);savedTeams[i]={...savedTeam(i),...changes};return commit({...state,savedTeams},'チームを保存',refresh);}
@@ -31,7 +33,7 @@ const TeamUI=(()=>{
    const slots=el('div',undefined,'saved-team-slots');
    for(let j=0;j<5;j++){
     const id=saved.team?.[j],p=state.pokemon.find(p=>p.id===id),b=button('',()=>TeamPicker.open(j,{name:savedTeam(i).name||'チーム'+(i+1),team:()=>savedTeam(i).team||Array(5).fill(null),save:team=>saveTeam(i,{team}),focusId:'saved-team-'+i+'-slot-'+j}),'team-slot-button');
-    typeBorder(b,p);b.setAttribute('aria-expanded','false');b.id='saved-team-'+i+'-slot-'+j;b.setAttribute('aria-label','チーム'+(i+1)+'の位置'+(j+1)+'：'+(p?label(p):'未設定'));b.setAttribute('aria-haspopup','dialog');b.append(el('span',j===0?'1R':String(j+1),'saved-slot-number'),p?cardInfo(p):name(p));slots.append(b);
+    const slot=el('div',undefined,'saved-team-slot-row');typeBorder(b,p);b.setAttribute('aria-expanded','false');b.id='saved-team-'+i+'-slot-'+j;b.setAttribute('aria-label','チーム'+(i+1)+'の位置'+(j+1)+'：'+(p?label(p):'未設定'));b.setAttribute('aria-haspopup','dialog');b.append(p?cardInfo(p):name(p));slot.append(el('span',j===0?'1R':String(j+1),'saved-slot-number'),b);slots.append(slot);
    }
    section.append(head,slots);root.append(section);
   }
@@ -40,19 +42,20 @@ const TeamUI=(()=>{
   for(const name of ['team','roster','register'])$(name+'-panel').hidden=view!==name||editing;
   $('individual-editor').hidden=!editing;
   for(const b of document.querySelectorAll('[data-team-view]')){b.setAttribute('aria-selected',String(b.dataset.teamView===view));b.tabIndex=b.dataset.teamView===view?0:-1;}
+  syncEntry();
  }
- function show(name){view=name;editing=false;sync();window.scrollTo({top:0});}
+ function show(name,entry=''){view=name;editing=false;if(name==='register'){registerEntry=entry;selected='';catalogOpen=false;$('pokemon-search').value='';$('add-pokemon').disabled=true;ProfileForm.reset('');}sync();window.scrollTo({top:0});}
  function edit(origin='roster'){editOrigin=['team','roster'].includes(origin)?origin:'roster';view=editOrigin;editing=true;sync();window.scrollTo({top:0});$('profile-back').focus({preventScroll:true});}
  function finishEdit(){show(editOrigin);}
- function registration(){$('registration-fields').hidden=!selected;ProfileForm.refresh(selected);}
- function renderRoster(){
-  const root=$('registered-pokemon-list'),q=normalize($('roster-search').value);root.replaceChildren();root.style.setProperty('--roster-columns',columns);root.dataset.columns=String(columns);
+ function registration(){$('registration-fields').hidden=false;ProfileForm.refresh(selected);}
+ function renderRoster(root=$('registered-pokemon-list'),displayView=rosterView,search=$('roster-search').value){
+  const q=normalize(search);root.replaceChildren();root.style.setProperty('--roster-columns',columns);root.dataset.columns=String(columns);
   const normal=state.pokemon.filter(p=>!special(p));
   const category=p=>['メタモン','マネネ','バリヤード'].includes(p.species)?'スキルコピー':p.species!=='ミュウ'&&SK.id(SK.forPokemon(p))==='metronome'?'ゆびをふる':special(p)?'アメ':relatedPokemon(p)?'ゆめのかけら':'その他のポケモン';
   const target=p=>category(p)!=='その他のポケモン';
-  const visible=state.pokemon.filter(p=>(rosterView==='skills'?!p.provisional&&target(p):rosterView==='registered'?!p.provisional:rosterView==='provisional'?p.provisional:true)&&(!q||[p.species,C.speciesName(p.species),p.nickname].some(v=>normalize(v||'').includes(q))));
+  const visible=state.pokemon.filter(p=>(displayView==='skills'?!p.provisional&&target(p):displayView==='registered'?!p.provisional:displayView==='provisional'?p.provisional:true)&&(!q||[p.species,C.speciesName(p.species),p.nickname].some(v=>normalize(v||'').includes(q))));
   for(const b of document.querySelectorAll('[data-roster-view]')){b.setAttribute('aria-pressed',String(b.dataset.rosterView===rosterView));if(b.dataset.rosterView==='provisional'){const n=state.pokemon.filter(p=>p.provisional).length;b.textContent='仮登録'+(n?'('+n+')':'');}}
-  const groups=rosterView==='skills'?['アメ','ゆめのかけら','スキルコピー','ゆびをふる','その他のポケモン'].map(title=>[title,sorted(visible.filter(p=>category(p)===title))]):[['',sorted(visible)]];
+  const groups=displayView==='skills'?['アメ','ゆめのかけら','スキルコピー','ゆびをふる','その他のポケモン'].map(title=>[title,sorted(visible.filter(p=>category(p)===title))]):[['',sorted(visible)]];
   for(const [title,members] of groups){if(!members.length)continue;if(title)root.append(el('h3',title,'roster-purpose-heading'));const group=el('div',undefined,'individual-roster-grid');root.append(group);
   for(const p of members){
    const line=el('div',undefined,'registered-row'),info=cardInfo(p),actions=el('div',undefined,'row-actions');
@@ -79,7 +82,11 @@ const TeamUI=(()=>{
  function init(){
   const tabs=[...document.querySelectorAll('[data-team-view]')];
   tabs.forEach((b,i)=>{if(typeof TabIcons!=='undefined')TabIcons.add(b,({team:'users',roster:'list',register:'user-round-plus'})[b.dataset.teamView]);b.onclick=()=>show(b.dataset.teamView);b.onkeydown=e=>{let next;if(e.key==='ArrowRight')next=(i+1)%tabs.length;else if(e.key==='ArrowLeft')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();show(tabs[next].dataset.teamView);tabs[next].focus({preventScroll:true});};});
-  $('roster-search').oninput=renderRoster;$('roster-sort').onchange=()=>{rosterSort=$('roster-sort').value;renderRoster();};
+  $('roster-search').oninput=renderRoster;const sort=$('roster-sort');sort.textContent=sortModes[0][1];sort.onclick=()=>{rosterSort=sortModes[(sortModes.findIndex(([key])=>key===rosterSort)+1)%sortModes.length][0];sort.textContent=sortModes.find(([key])=>key===rosterSort)[1];renderRoster();};
+  const panel=$('register-panel'),choices=el('div',undefined,'roster-views register-entry-choices'),form=el('div',undefined,'register-entry-form'),importPane=el('div',undefined,'register-entry-import');
+  for(const child of [...panel.children])if(child.tagName!=='H2'){(child.classList.contains('individual-import-entry')?importPane:form).append(child);}
+  panel.append(choices,form,importPane);
+  for(const [key,title] of [['new','新規登録'],['import','データ取り込み']]){const choice=button(title,()=>{registerEntry=key;syncEntry();});choice.dataset.registerEntry=key;choices.append(choice);}
   $('roster-other-toggle').remove();const views=el('div',undefined,'roster-views');for(const [key,title] of [['skills','記録スキル'],['registered','登録済み'],['provisional','仮登録'],['all','すべて']]){const b=button(title,()=>{rosterView=key;renderRoster();});b.dataset.rosterView=key;views.append(b);}$('registered-pokemon-list').before(views);$('roster-search').addEventListener('change',renderRoster);
   const toolbar=el('div',undefined,'profile-editor-actions'),cancel=$('profile-back'),save=$('profile-form').querySelector('button[type=submit]');cancel.textContent='キャンセル';save.textContent='保存';save.classList.add('primary');toolbar.append(cancel,$('profile-remove'),save);$('profile-form').prepend(toolbar);cancel.onclick=finishEdit;
   $('profile-remove').onclick=()=>{
@@ -88,5 +95,6 @@ const TeamUI=(()=>{
   };
   sync();registration();
  }
- return {init,show,edit,finishEdit,sync,registration,renderRoster,name,cardInfo,typeBorder,sorted,reorder,renderSavedTeams,saveCurrent,useTeam,saveTeam};
+ function syncEntry(){const panel=$('register-panel');if(!panel)return;for(const choice of panel.querySelectorAll('[data-register-entry]'))choice.setAttribute('aria-pressed',String(choice.dataset.registerEntry===registerEntry));const form=panel.querySelector('.register-entry-form'),importPane=panel.querySelector('.register-entry-import'),actions=panel.querySelector('.individual-editor-head .profile-editor-actions');if(form)form.hidden=registerEntry!=='new';if(importPane)importPane.hidden=registerEntry!=='import';if(actions)actions.hidden=registerEntry!=='new';}
+ return {init,show,edit,finishEdit,sync,registration,renderRoster,name,cardInfo,typeBorder,sorted,reorder,renderSavedTeams,saveCurrent,useTeam,saveTeam,currentView:()=>view};
 })();

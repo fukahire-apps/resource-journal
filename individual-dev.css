@@ -1,4 +1,4 @@
-/* Confined to team and its choice dialogs. */
+/* Ver.1.1.0 DEV: confined to team and its choice dialogs. */
 #team #roster-panel .individual-roster-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 #team #roster-panel .roster-views{display:flex;gap:4px;flex-wrap:wrap;margin:12px 0}
 #team .roster-views button{font-size:13px;min-height:44px;padding:6px 8px}

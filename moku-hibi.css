@@ -5,7 +5,7 @@
  --resource-candy:#DC9EB5;--resource-shard:#E5C96C;
  --resource-candy-bg:#FAEFF3;--resource-shard-bg:#FCF8E8;
  --editorial-candy:var(--resource-candy);--editorial-shard:var(--resource-shard);
- --source-research:#4f78a8;--source-social:#4f8666;--source-help:#ad625b;--source-skills:#9C7A31;--source-other:#82919B;
+ --source-research:#4f78a8;--source-social:#4f8666;--source-help:#ad625b;--source-skills:#9C7A31;--source-professor:#8870A5;--source-other:#82919B;
  --shard-skill-color:var(--source-skills);--shard-research-color:var(--source-research);--shard-other-color:var(--source-other);
  --shard-skill-tint:#F6F0E1;--shard-research-tint:#EDF2F8;--shard-other-tint:#F0F3F5;
  --mh-accent:#80643B;--mh-border:#E5E5E5;--mh-selected:#F3EEE5;--mh-error:#B45353;
@@ -48,6 +48,67 @@ body .tabs [data-tab=shards][aria-current=page]:before{background:var(--resource
 [data-source="candy-help"]{color:var(--source-help)}
 [data-source="candy-mew"],[data-source="candy-delibird"],[data-source="candy-skill"]{color:var(--source-skills)}
 [data-source="candy-other"]{color:var(--source-other)}
+[data-source="candy-professor"]{color:var(--source-professor)}
+.sleep-get-dot{color:#d74d50;font-size:.65em;margin-right:.25em;vertical-align:middle}
+#record-professor-view,#history-professor-view{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
+#record #record-view-switch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-bottom:16px!important}
+body:has(#record:not([hidden])) #notice:empty{min-height:0}
+body:has(#record:not([hidden])) .app>header{margin-bottom:6px}
+#record #record-view-switch>button{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;min-height:62px;padding:4px 1px;white-space:normal}
+#record #record-view-switch>button .tab-label{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0;font-size:11px;line-height:1.25;white-space:normal;text-align:left}
+#record #record-view-switch>button .tab-icon{width:13px;height:13px;flex:none}
+.professor-get-list,.professor-history-card{display:grid;gap:10px}
+.professor-history-card{padding:16px;border:1px solid var(--mh-edge,#ddd);border-radius:var(--mh-radius,12px);background:var(--mh-surface,#fff)}
+.professor-history-card label{display:grid;gap:4px;min-width:0}
+.professor-history-card input{min-width:0;max-width:100%;box-sizing:border-box}
+.professor-view-switch{display:flex;gap:5px;margin-bottom:8px}
+.professor-view-switch>button{width:auto;min-height:40px;margin:0;padding:4px 10px;font-size:12px}
+.professor-view-switch>button[aria-pressed=true]{background:var(--mh-selected);color:var(--mh-accent)}
+#record #record-professor-view>input[type=search]{width:100%;min-width:0;box-sizing:border-box;margin:0 0 8px}
+.professor-filters{display:grid;grid-template-columns:minmax(0,1fr) 94px minmax(0,1fr);gap:5px;align-items:center;margin:0 0 8px;min-width:0}
+.professor-filters>select{min-width:0;box-sizing:border-box;margin:0;height:44px;padding:4px;font-size:12px}
+.professor-filters>button{width:100%;min-width:0;min-height:44px;margin:0;padding:2px 1px;font-size:11px;white-space:nowrap}
+.professor-filters>button[aria-pressed=true]{background:var(--mh-selected);color:var(--mh-accent);border-color:var(--mh-accent)}
+.professor-species-list{display:grid}
+.professor-species-row{display:grid;grid-template-columns:27px 34px minmax(0,1fr) 41px 27px 27px 34px;gap:2px;align-items:center;padding:7px 0;border-bottom:1px solid var(--mh-border);min-width:0;white-space:nowrap}
+.professor-species-row>small{font-size:9px;color:var(--mh-muted)}
+.professor-species-row>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.professor-fp{position:relative;display:block;min-width:0}
+.professor-fp>button{width:100%;padding:0 1px!important;min-height:32px!important;font-size:9px!important;white-space:nowrap}
+.professor-fp-editor{position:absolute;top:100%;left:0;z-index:5;display:flex;gap:3px;padding:4px;background:var(--mh-surface);border:1px solid var(--mh-border);border-radius:6px}
+.professor-fp-editor>input{width:60px;min-width:0;min-height:32px!important;padding:2px}
+.professor-species-row>button{margin:0;min-width:0;min-height:44px;padding:0 1px;font-size:10px;line-height:1;white-space:nowrap}
+.professor-species-row>button .tab-icon{width:14px;height:14px}
+.professor-species-row>.professor-get-amount{display:inline-flex;align-items:center;min-width:0;gap:1px;white-space:nowrap;font-size:10px}
+.professor-get-group{border-bottom:1px solid var(--mh-border)}
+.professor-get-group>h3{margin:12px 0 4px;font-size:14px}
+.professor-get-row{display:grid;grid-template-columns:minmax(0,1fr) 45px 45px 45px;gap:5px;align-items:center;padding:8px 0;border-top:1px solid var(--mh-border)}
+.professor-get-slot{display:flex;align-items:center;justify-content:center;min-width:0}
+.professor-get-slot>button{width:100%;min-width:0;min-height:44px;margin:0;padding:4px 2px;font-size:12px}
+.professor-get-detail{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap;overflow-wrap:anywhere}
+.professor-get-name.processed{color:var(--mh-muted)}
+.professor-get-slot{white-space:nowrap;font-size:12px}
+.professor-get-slot .tab-icon{width:14px;height:14px}
+.professor-get-row>button{min-width:0;min-height:44px;margin:0;padding:4px 2px;font-size:12px}
+.professor-get-row>button[aria-pressed=true]{color:var(--mh-text);background:#eee;border-color:var(--mh-border)}
+.professor-profile-modal .app-panel-body{overflow-y:auto;max-height:calc(100dvh - 140px)}
+.professor-profile-modal #register-panel{display:block;padding:0}
+.professor-profile-modal #register-panel .individual-top-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 62px;gap:8px}
+.professor-profile-modal #register-panel .individual-top-grid>.individual-field{grid-column:span 2;min-width:0}
+.professor-profile-modal #register-panel .individual-top-grid>.individual-field:has(#register-main-skill){grid-column:1/4}
+.professor-profile-modal #register-panel .individual-top-grid>.individual-field:has(#register-skill){grid-column:4}
+.professor-profile-modal #register-panel .individual-top-grid :is(input,select){min-width:0;width:100%;box-sizing:border-box}
+.professor-profile-modal #register-panel .individual-subskills label{display:flex;align-items:center;gap:4px;min-width:0}
+#team #register-top-grid:has(.individual-field:not([hidden]) #nickname) .individual-field:has(#pokemon-search),.professor-profile-modal #register-top-grid .individual-field:has(#pokemon-search){grid-column:span 2;position:relative}
+#team #register-top-grid .individual-field:has(#pokemon-search) #pokemon-search-results,.professor-profile-modal #register-top-grid .individual-field:has(#pokemon-search) #pokemon-search-results{position:absolute;z-index:30;top:100%;left:0;width:min(280px,calc(100vw - 32px));max-height:270px;background:var(--mh-surface);border:1px solid var(--mh-border);box-shadow:0 8px 18px #0002;grid-template-columns:1fr}
+#record #record-professor-view .individual-roster-grid{display:grid;grid-template-columns:repeat(var(--roster-columns,3),minmax(0,1fr));gap:8px}
+#record #record-professor-view .registered-row{position:relative;display:flex;flex-direction:column;min-width:0;min-height:102px;padding:5px 4px;border:1px solid var(--mh-border);border-radius:var(--mh-radius);background:var(--mh-surface)}
+#record #record-professor-view .pokemon-card-info{display:flex;flex-direction:column;min-width:0;width:100%}
+#record #record-professor-view .pokemon-card-info>*{display:block;margin:0;min-width:0;line-height:18px}
+#record #record-professor-view .pokemon-card-info .pokemon-card-species{font-size:11px;color:var(--mh-muted);overflow-wrap:anywhere}
+.professor-history-card{margin-block:10px}
+@media(max-width:390px){.professor-history-card{padding:10px}}
+@media(max-width:340px){#record #record-view-switch>button{gap:2px}#record #record-view-switch>button .tab-label{font-size:10px}#record #record-view-switch>button .tab-icon{width:12px;height:12px}}
 body:has(:is(#record,#sleep,#summary,#shards,#history,#team,#settings):not([hidden])) .app{
  background:var(--mh-surface);max-width:var(--mh-content-width);min-height:100svh;padding-inline:var(--mh-gutter);box-shadow:var(--mh-shadow);
 }
@@ -350,13 +411,14 @@ body :is(#app-panel,#history-field-view) .field-history-days>button.field-histor
 #team-panel .saved-team-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 #team-panel .saved-team-head input{flex:1;min-width:0;width:auto;margin:0}
 #team-panel .saved-team-head button{flex:none;min-height:44px;margin:0}
+#team-panel .saved-team-slot-row{display:flex;flex-direction:column;min-width:0;gap:2px}
 #team-panel .saved-slot-number{display:block;font-size:11px;color:var(--mh-muted);text-align:left}
 .team-save-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .team-save-choices button{min-width:0;overflow-wrap:anywhere}
 #team #team-panel #team-slots .team-slot-button{grid-column:1;grid-row:2;padding:6px 3px}
 #team #team-panel #team-slots .team-slot-edit{grid-column:1;grid-row:3;align-self:start}
 
-/* One row of acquisition sources, shared with dream shards. */
+/* Acquisition source controls shared with dream shards. */
 :is(#summary,#shards) .candy-source-switches{display:grid;grid-template-columns:repeat(var(--source-count,6),minmax(0,1fr));gap:2px;flex-wrap:nowrap}
 :is(#summary,#shards) .candy-source-choice{width:auto;min-width:0;flex:none}
 :is(#summary,#shards) .candy-source-choice button{width:100%;min-width:0;min-height:44px;padding:6px 0;font-size:clamp(8px,2.7vw,12px);line-height:1.3;white-space:nowrap;writing-mode:horizontal-tb;border-radius:var(--mh-radius)}
@@ -370,9 +432,10 @@ body :is(#app-panel,#history-field-view) .field-history-days>button.field-histor
  :is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info{display:flex;flex-direction:column;min-width:0;width:100%;gap:0;text-align:left}
 :is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info>*{display:block;margin:0;min-width:0;line-height:18px}
 :is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-level{height:18px;text-align:right;font-size:13px;font-weight:400;color:var(--mh-text)}
-:is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-nickname{height:18px;font-size:13px;font-weight:650;color:var(--mh-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+:is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-level strong{font-weight:700}
+:is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-nickname{height:18px;font-size:13px;font-weight:700;color:var(--mh-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
 :is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .individual-number{white-space:nowrap;font-size:10px;color:var(--mh-muted);font-weight:400}
-:is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-species{font-size:11px;line-height:14px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;height:28px;color:var(--mh-muted);font-weight:400;overflow-wrap:anywhere}
+:is(#team #registered-pokemon-list,#team #team-panel,#team-picker) .pokemon-card-info .pokemon-card-species{font-size:13px;line-height:16px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:32px;color:#555;font-weight:600;overflow-wrap:anywhere}
 #team .pokemon-card-info .provisional-badge,#team-picker .provisional-badge{position:absolute;bottom:2px;left:4px;font-size:9px;line-height:12px;color:var(--mh-accent)}
 #team-picker .team-picker-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch}
 #team-picker .team-picker-grid .team-picker-status{font-size:9px;line-height:14px;min-height:14px;color:var(--mh-muted)}
@@ -383,6 +446,142 @@ body :is(#app-panel,#history-field-view) .field-history-days>button.field-histor
 #team-picker .team-picker-grid>p{grid-column:1/-1}
 #team #roster-sort{width:auto;min-width:0;max-width:55%;margin:0;font-size:13px;padding-inline:6px}
 #team #registered-pokemon-list .registered-row[data-pokemon-type],#team #team-panel .team-slot-button[data-pokemon-type],#team-picker .team-picker-row[data-pokemon-type]{border:2px solid var(--pokemon-type-color)}
+/* Registered and current team cards share the existing type border and information styles. */
+#team #registered-pokemon-list .registered-row[data-pokemon-type-label],#team #team-panel .team-slot-button[data-pokemon-type-label]{position:relative}
+#team #registered-pokemon-list .registered-row[data-pokemon-type-label]::before,#team #team-panel .team-slot-button[data-pokemon-type-label]::before{content:attr(data-pokemon-type-label);position:absolute;top:0;left:0;z-index:1;max-width:100%;box-sizing:border-box;padding:1px 2px;border-radius:3px;background:var(--pokemon-type-color);color:#fff;font-size:clamp(8px,2.4vw,10px);line-height:13px;white-space:nowrap;overflow:hidden}
+#team #registered-pokemon-list .registered-row{padding-top:18px}
+#team #registered-pokemon-list .pokemon-card-info .pokemon-card-species{font-size:12px}
+#team .pokemon-card-species.has-form{display:block}
+#team .pokemon-card-species :is(.pokemon-card-species-base,.pokemon-card-species-form){display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#team .pokemon-card-species .pokemon-card-species-form{font-size:.82em}
+#team #team-panel #team-slots>.team-slot-row{display:flex;flex-direction:column;gap:2px;padding-top:0;min-width:0}
+#team #team-panel #team-slots .team-slot-row>span{position:static;display:block;font-size:11px;line-height:14px;min-height:14px}
+#team #team-panel #team-slots .team-slot-row>.team-slot-button{height:136px;min-height:136px;padding:18px 3px 24px}
+#team #team-panel .saved-team-slot-row>.team-slot-button{height:116px;min-height:116px;padding:18px 3px 4px}
+#team #team-panel .pokemon-card-info .pokemon-card-nickname{height:auto;max-height:32px;font-size:12px;line-height:16px;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere}
+#team #team-panel .pokemon-card-info .pokemon-card-species{font-size:11px;line-height:14px;max-height:28px}
+#team #team-panel #team-slots .pokemon-card-level{padding:0;text-align:right;font-size:11px;letter-spacing:0;transform:none}
+#team #team-panel #team-slots .team-slot-actions{position:absolute;bottom:1px;left:2px;right:2px;display:flex;justify-content:space-between;align-items:center}
+#team #team-panel #team-slots .team-slot-actions button{position:static!important;display:grid;place-items:center;width:22px!important;min-width:22px!important;height:22px;min-height:22px;margin:0;padding:2px;border:0;background:transparent;color:var(--mh-text)}
+#team #team-panel #team-slots .team-slot-actions .tab-icon{width:15px;height:15px;margin:0}
+#team #team-panel #team-slots .team-slot-actions .tab-label{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+#team #register-panel .individual-editor-head .profile-editor-actions[hidden]{display:none}
+#team #register-panel :is(.register-entry-form,.register-entry-import)[hidden]{display:none}
+#team #roster-sort{min-height:40px}
 /* Touch Safari can retain :hover after a dialog closes. Only the open slot stays highlighted. */
 #team #team-panel .team-slot-button:not([aria-expanded=true]):hover{background:var(--mh-surface)}
 #team #team-panel .team-slot-button[aria-expanded=true]{background:var(--mh-selected)}
+
+/* History cards keep the existing two-column grid and align actions within each row. */
+#history #history-list{align-items:stretch;gap:12px}
+#history #history-list .card{display:flex;flex-direction:column;min-width:0;margin:0;padding:12px;background:#fff;border:1px solid #dadada;border-radius:10px;box-shadow:none}
+#history #history-list .card.shards{background:#fff;border:1px solid #dadada}
+#history #history-list .history-topline{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:4px 6px}
+#history #history-list .history-topline .history-method{min-width:0;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+#history #history-list .history-topline .history-time{white-space:nowrap;font-size:11px;line-height:1.5;text-align:right}
+#history #history-list .history-meta .history-category{align-self:center;white-space:nowrap;font-size:10px;color:var(--mh-muted)}
+#history #history-list .history-footer{margin-top:auto;border-top:0}
+#history .history-actions .history-icon-action,#history #history-list .history-footer .history-actions .history-icon-action{display:inline-flex;align-items:center;justify-content:center;min-width:36px;width:36px;min-height:40px;padding:4px;border:0;background:transparent;color:var(--mh-text)}
+#history .history-actions .history-icon-action.danger,#history #history-list .history-footer .history-actions .history-icon-action.danger{color:var(--mh-error)}
+#history .history-icon-action .tab-icon{width:17px;height:17px}
+#history .history-icon-action .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#sleep .sleep-history-entry{margin:10px 0;padding:12px;background:#fff;border:1px solid #dadada;border-radius:10px}
+#sleep .sleep-history-entry .history-actions .history-icon-action{min-width:40px}
+#history-field-view .field-history-current{padding:10px 0 14px}
+#history-field-view .field-history-current-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--mh-muted)}
+#history-field-view .field-history-current-head time{white-space:nowrap}
+#history-field-view .field-history-current>strong{display:block;font-size:17px;line-height:1.5}
+#history-field-view .field-history-detail{padding-top:12px}
+#history-field-view .field-history-change{flex-wrap:nowrap}
+#history-field-view .field-history-change>span{overflow-wrap:anywhere}
+#history-professor-view .professor-history-card{display:block;margin:8px 0;padding:8px;background:#fff;border:1px solid #dadada;border-radius:10px}
+#history-professor-view .professor-history-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:4px;white-space:nowrap;font-size:11px}
+#history-professor-view .professor-history-line>span:nth-child(2){overflow:hidden;text-overflow:ellipsis}
+#history-professor-view .professor-history-line>strong{font-size:12px}
+#history-professor-view .history-actions{display:flex;gap:0}
+#history-professor-view .history-actions .history-icon-action{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:36px;margin:0;padding:4px;border:0;background:transparent;color:var(--mh-text)}
+#history-professor-view .history-actions .history-icon-action.danger{color:var(--mh-error)}
+#history-professor-view .history-icon-action .tab-icon{width:16px;height:16px}
+#history-professor-view .history-icon-action .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#history-professor-view .professor-history-edit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--mh-border)}
+#history-professor-view .professor-history-edit>label{min-width:0}
+#history-professor-view .professor-history-edit>label:nth-child(3){grid-column:1/-1}
+@media(max-width:390px){#history #history-list .card{padding:9px}#history #history-list .history-topline .history-method{font-size:12px}#history #history-list .history-topline .history-time{font-size:10px}}
+#history #history-list .history-meta{flex-wrap:wrap}
+#history .period-picker[hidden]{display:none!important}
+#history #history-list .history-meta .history-amount{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 5px;min-width:0}
+#history #history-list .history-meta .history-primary{font-size:11px;font-weight:400;line-height:1.3;overflow-wrap:anywhere;min-width:0}
+#history #history-list .card :is(.history-meta,.history-target){margin-block:3px}
+#history #history-list .card[data-history-source=help] .history-method{color:var(--source-help)}
+#history #history-list .card[data-history-source=skills] .history-method{color:var(--source-skills)}
+#history #history-list .card[data-history-source=research] .history-method{color:var(--source-research)}
+#history #history-list .card[data-history-source=other] .history-method{color:var(--source-other)}
+#history-details-panel #edit-team{display:grid;gap:7px;min-width:0}
+#history-details-panel #edit-team>label{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;justify-items:center;gap:8px;min-width:0;margin:0}
+#history-details-panel #edit-team>label select{width:100%;min-width:0;min-height:42px;margin:0;border-radius:var(--mh-radius)}
+#history-professor-view .professor-history-line>span:nth-child(2){overflow:visible;text-overflow:clip}
+
+#sleep .sleep-history-entry .history-icon-action{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;padding:4px;border:0;background:transparent;color:var(--mh-text)}
+#sleep .sleep-history-entry .history-icon-action.danger{color:var(--mh-error)}
+#sleep .sleep-history-entry .history-icon-action .tab-icon{width:17px;height:17px}
+#sleep .sleep-history-entry .history-icon-action .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+#history-field-view .field-history-change .history-icon-action{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:40px;min-height:40px;margin:0;padding:4px;border:0;background:transparent;color:var(--mh-text)}
+#history-field-view .field-history-change .history-icon-action.danger{color:var(--mh-error)}
+#history-field-view .field-history-change .history-icon-action .tab-icon{width:17px;height:17px}
+#history-field-view .field-history-change .history-icon-action .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* Five history views share the existing tab treatment without horizontal scrolling. */
+#history #history-view-switch{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;width:100%;margin-bottom:12px}
+#history #history-view-switch>button{width:100%;min-width:0;min-height:58px;padding:5px 1px;gap:2px;white-space:normal}
+#history #history-view-switch .tab-label{display:flex;flex-direction:column;min-width:0;font-size:10px;line-height:1.25;text-align:left}
+#history #history-view-switch .tab-icon{width:13px;height:13px}
+#history #history-view-switch>button::after{left:2px;right:2px}
+@media(max-width:340px){#history #history-view-switch .tab-label{font-size:9px}#history #history-view-switch .tab-icon{width:12px;height:12px}}
+#history :is(#history-list,#history-social-view){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:12px}
+#history #history-social-view[hidden],#history .filters[hidden]{display:none}
+#history :is(#history-list,#history-social-view) .card{display:flex;flex-direction:column;min-width:0;max-width:100%;margin:0;padding:10px;background:#fff;border:1px solid #dadada;border-radius:10px;box-shadow:none}
+#history :is(#history-list,#history-social-view) .history-topline{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:4px}
+#history :is(#history-list,#history-social-view) .history-topline .history-category{font-size:11px;font-weight:700;color:var(--resource-candy);min-width:0;overflow-wrap:anywhere}
+#history :is(#history-list,#history-social-view) .card.shards .history-topline .history-category{color:var(--resource-shard)}
+#history :is(#history-list,#history-social-view) .history-topline .history-time{display:flex;flex-direction:column;align-items:flex-end;font-size:10px;line-height:1.3;white-space:nowrap}
+#history :is(#history-list,#history-social-view) .history-meta{display:flex;flex-direction:column;gap:3px;margin:6px 0}
+#history :is(#history-list,#history-social-view) .history-meta .history-method{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+#history :is(#history-list,#history-social-view) .history-meta .history-amount{font-size:20px;line-height:1.2}
+#history :is(#history-list,#history-social-view) .history-footer{position:relative;margin-top:auto;border:0;display:flex;align-items:center;justify-content:space-between;min-width:0}
+#history :is(#history-list,#history-social-view) .history-footer .history-actions{position:static;width:auto;display:flex;margin-left:auto}
+#history :is(#history-list,#history-social-view) .history-footer>.history-detail-button{width:auto;min-width:44px}
+#history :is(#history-list,#history-social-view) .history-footer .history-actions button{flex:none;min-width:36px;width:36px}
+#history #history-list .history-date-divider{grid-column:1/-1}
+@media(max-width:390px){#history :is(#history-list,#history-social-view) .card{padding:8px}#history :is(#history-list,#history-social-view) .history-meta .history-method{font-size:11px}}
+#history-field-view .field-history-current{display:flex;flex-direction:column;gap:4px;padding:8px 0 12px}
+#history-field-view .field-history-current time{color:var(--mh-muted);font-size:13px}
+#history-field-view .field-history-current strong{font-size:18px}
+#history #history-professor-view{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:12px}
+#history #history-professor-view[hidden]{display:none}
+#history #history-professor-view .professor-history-card{display:flex;flex-direction:column;gap:0;min-width:0;margin:0;padding:10px;background:#fff;border:1px solid #dadada;border-radius:10px}
+#history #history-professor-view .professor-history-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:4px;min-width:0}
+#history #history-professor-view .professor-history-head .history-category{font-size:11px;font-weight:700;color:var(--resource-candy)}
+#history #history-professor-view .professor-history-time{display:flex;flex-direction:column;align-items:flex-end;flex:none;white-space:nowrap;font-size:10px;line-height:1.3}
+#history #history-professor-view .professor-history-summary{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:6px 0;font-size:12px}
+#history #history-professor-view .professor-history-summary .history-method{font-size:12px;line-height:1.4;color:var(--source-professor)}
+#history #history-professor-view .professor-history-summary .history-amount{font-size:20px;line-height:1.2;white-space:nowrap}
+#history #history-professor-view .professor-history-summary .history-amount .quantity-number{font-size:20px}
+#history #history-professor-view .professor-history-summary small{overflow-wrap:anywhere}
+#history #history-professor-view .history-footer{display:flex;align-items:center;justify-content:space-between;min-width:0;margin-top:auto;border:0}
+#history #history-professor-view .history-footer>.history-detail-button{width:auto;min-width:44px;min-height:40px;margin:0;padding:4px;background:none;border:0;box-shadow:none;font-size:12px}
+#history #history-professor-view .history-footer .history-actions{position:static;display:flex;align-items:center;gap:0;width:auto;margin:0 0 0 auto}
+#history #history-professor-view .history-footer .history-actions .history-icon-action{min-width:36px;width:36px;min-height:40px}
+#history #history-professor-view .professor-history-details{margin-top:8px;padding-top:8px;border-top:1px solid var(--mh-border);font-size:11px}
+#history #history-professor-view .professor-history-edit{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;border:0}
+#history #history-professor-view .professor-history-item{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0;overflow-wrap:anywhere}
+#history #history-professor-view .professor-history-item input{width:54px;min-width:0;margin:0;padding:4px}
+#history #history-professor-view .professor-history-item button{min-width:32px;min-height:32px;margin-left:auto;padding:4px}
+#history-details-panel .history-inline-editor{overflow-y:auto;min-height:0;padding:12px 16px 20px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#history-details-panel .history-inline-editor form{min-width:0;margin:0}
+#history-details-panel .history-inline-editor .section-head[hidden]{display:none!important}
+#history-details-panel .history-inline-editor form>label,#history-details-panel .history-inline-editor form>.filters>label{display:grid;grid-template-columns:minmax(90px,34%) minmax(0,1fr);align-items:center;gap:8px;min-width:0;margin:8px 0}
+#history-details-panel .history-inline-editor :is(input,select){min-width:0;max-width:100%}
+#history-details-panel .history-inline-editor form>.filters{display:block}
+@media(max-width:390px){#history-details-panel .history-inline-editor{padding:10px 12px 18px}#history-details-panel .history-inline-editor form>label,#history-details-panel .history-inline-editor form>.filters>label{grid-template-columns:minmax(76px,32%) minmax(0,1fr);gap:6px}}
+@media(max-width:390px){#history #history-professor-view .professor-history-card{padding:8px}#history #history-professor-view .professor-history-head{font-size:10px}}
