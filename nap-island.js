@@ -18,12 +18,12 @@ const NapIsland=(()=>{
  function init(){
   const section=$('nap-island-section'),head=section.querySelector('h2');if(head)head.hidden=true;
   const form=el('form'),label=el('label'),amount=el('input'),save=el('button','記録');form.id='nap-island-shard-form';amount.id='nap-island-shard-amount';amount.placeholder='ゆめのかけら';Object.assign(amount,{type:'number',inputMode:'numeric',min:'1',max:'1000000000',step:'1',required:true});amount.setAttribute('aria-label','おひるね島のゆめのかけらの個数');label.append(amount);save.type='submit';form.append(label,save);section.prepend(form);
-  form.onsubmit=e=>{e.preventDefault();try{const n=Number(amount.value);if(!String(amount.value||'').trim()||!Number.isSafeInteger(n)||n<1||n>1000000000)throw Error('ゆめのかけらの個数は1以上の整数で入力してください。');if(ShardUI.saveRecord({method:'other',otherKind:'nap_island',amount:n,memo:''}))amount.value='';}catch(err){notice(err.message,true);}};
+  form.onsubmit=async e=>{e.preventDefault();try{const n=Number(amount.value);if(!String(amount.value||'').trim()||!Number.isSafeInteger(n)||n<1||n>1000000000)throw Error('ゆめのかけらの個数は1以上の整数で入力してください。');if(await ShardUI.saveRecord({method:'other',otherKind:'nap_island',amount:n,memo:''}))amount.value='';}catch(err){notice(err.message,true);}};
 
   const details=el('div'),summary=el('h3','おひるね島','record-subheading');details.id='nap-island-details';section.before(details);details.append(summary,section);
   $('show-nap-island').onchange=()=>commit({...state,settings:{...state.settings,showNapIsland:$('show-nap-island').checked}},null);
   $('nap-island-search').oninput=()=>{selected='';search();};
-  $('nap-island-form').onsubmit=e=>{e.preventDefault();try{const raw=$('nap-island-amount').value;if(!raw.trim())throw Error('アメの個数を入力してください。');const r=build(selected,Number(raw),recordDate(),uid());if(commit({...state,records:[...state.records,r]},resourceNotice(r)))$('nap-island-amount').value='';}catch(err){notice(err.message,true);}};
+  $('nap-island-form').onsubmit=async e=>{e.preventDefault();try{const raw=$('nap-island-amount').value;if(!raw.trim())throw Error('アメの個数を入力してください。');const r=build(selected,Number(raw),recordDate(),uid());if(await commit({...state,records:[...state.records,r]},resourceNotice(r)))$('nap-island-amount').value='';}catch(err){notice(err.message,true);}};
  }
  function edit(record,host,done,cancel){
   const dialog=el('dialog'),form=el('form'),date=el('input'),species=el('select'),amount=el('input'),finish=saved=>host?(saved?done():cancel()):dialog.close();dialog.id='nap-island-editor';if(host)host.append(form);else{dialog.append(form);document.body.append(dialog);}
@@ -31,7 +31,7 @@ const NapIsland=(()=>{
   for(const name of names)species.add(new Option(C.speciesName(name),name));species.value=record.species;if(!host)form.append(el('h2','おひるね島の記録を訂正'));
   for(const [title,input] of [['日時',date],['ポケモン名',species],['アメの個数',amount]]){const label=el('label',title);input.setAttribute('aria-label',title);label.append(input);form.append(label);}
   const error=el('p'),save=el('button','訂正を保存'),cancelButton=button('キャンセル',()=>finish(false));error.setAttribute('role','alert');save.type='submit';form.append(error,save,cancelButton);dialog.onclose=()=>dialog.remove();
-  form.onsubmit=e=>{e.preventDefault();try{const old=state.records.find(r=>r.id===record.id&&C.isNapRecord(r));if(!old)throw Error('編集する記録が見つかりません。');if(!amount.value.trim())throw Error('アメの個数を入力してください。');const next={...old,...build(species.value,Number(amount.value),date.value===C.localInput(old.datetime)?new Date(old.datetime):C.fromInput(date.value),old.id),updatedAt:new Date().toISOString()};if(commit({...state,records:state.records.map(r=>r.id===old.id?next:r)},'おひるね島の記録を訂正しました。'))finish(true);}catch(err){error.textContent=err.message;}};
+  form.onsubmit=async e=>{e.preventDefault();try{const old=state.records.find(r=>r.id===record.id&&C.isNapRecord(r));if(!old)throw Error('編集する記録が見つかりません。');if(!amount.value.trim())throw Error('アメの個数を入力してください。');const next={...old,...build(species.value,Number(amount.value),date.value===C.localInput(old.datetime)?new Date(old.datetime):C.fromInput(date.value),old.id),updatedAt:new Date().toISOString()};if(await commit({...state,records:state.records.map(r=>r.id===old.id?next:r)},'おひるね島の記録を訂正しました。'))finish(true);}catch(err){error.textContent=err.message;}};
   DateUI.update();if(!host)dialog.showModal();return ()=>dialog.remove();
  }
  return {init,render,build,edit};
